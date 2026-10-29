@@ -1,82 +1,85 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { site } from '#lib/site';
-	import { projects } from '#lib/projects';
-	import ProjectCard from '#lib/components/ProjectCard.svelte';
+	import { asset } from '$app/paths';
+	import PebbleField, { type PlatePebble } from '#lib/components/PebbleField.svelte';
 
-	const notes = [
-		{ year: '2026', text: 'Mimir, a desktop app that teaches instead of answering.' },
-		{ year: '2026', text: 'A set of Obsidian plugins for reading on warm paper.' },
-		{ year: '2025', text: 'Tomodoro, a timer that respects your attention.' }
+	// Placed by hand: a few big shapes, a few small ones, and enough paper
+	// between them that the connectors have somewhere to wander.
+	const pebbles: PlatePebble[] = [
+		{ src: asset('photos/jungle.jpg'), x: 0.29, y: 0.16, r: 0.215, seed: 11 },
+		{ src: asset('photos/cat.jpg'), x: 0.74, y: 0.18, r: 0.13, seed: 23 },
+		{ src: asset('photos/kingfisher.jpg'), x: 0.62, y: 0.4, r: 0.112, seed: 31 },
+		{ src: asset('photos/seedlings.jpg'), x: 0.24, y: 0.52, r: 0.172, seed: 47 },
+		{ src: asset('photos/leopard.jpg'), x: 0.71, y: 0.62, r: 0.148, seed: 59 },
+		{ src: asset('photos/hamster.jpg'), x: 0.3, y: 0.8, r: 0.113, seed: 71 },
+		{ src: asset('photos/cactus.jpg'), x: 0.68, y: 0.87, r: 0.092, seed: 83 }
 	];
+
+	const links: [number, number][] = [
+		[0, 1],
+		[1, 2],
+		[2, 4],
+		[4, 3],
+		[3, 5],
+		[5, 6],
+		[4, 6]
+	];
+
+	let google = $state<HTMLInputElement>();
+	let wikipedia = $state<HTMLInputElement>();
+
+	// `/` jumps to the first field from anywhere on the page, the way a browser
+	// search bar does. Ignored while something else is already focused.
+	function onKeydown(event: KeyboardEvent) {
+		if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+		const target = event.target as HTMLElement | null;
+		if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return;
+		event.preventDefault();
+		google?.focus();
+	}
 </script>
 
-<svelte:head>
-	<title>{site.title}</title>
-	<meta name="description" content={site.description} />
-</svelte:head>
+<svelte:window on:keydown={onKeydown} />
 
-<main id="main">
-	<section class="hero" id="top">
-		<div class="container">
-			<p class="kicker">Local-first · offline by default</p>
-			<h1>{site.tagline}</h1>
-			<p class="lede">{site.intro}</p>
-			<div class="actions">
-				<a class="btn btn--primary" href={resolve('/#projects')}>
-					See the projects
-					<span aria-hidden="true">↓</span>
-				</a>
-				<a class="btn" href="https://github.com/{site.github}" target="_blank" rel="noreferrer">
-					GitHub
-					<span aria-hidden="true">↗</span>
-				</a>
-			</div>
-		</div>
-	</section>
+<main class="home">
+	<PebbleField {pebbles} {links} cell={2} />
 
-	<section class="section" id="projects">
-		<div class="container">
-			<div class="section-head">
-				<h2>Projects</h2>
-				<p>{projects.length} things, most of them small.</p>
-			</div>
-			<div class="grid">
-				{#each projects as project (project.href)}
-					<ProjectCard {project} />
-				{/each}
-			</div>
-		</div>
-	</section>
+	<section class="searches" aria-label="Search">
+		<form
+			class="search"
+			action="https://www.google.com/search"
+			method="get"
+			target="_blank"
+			rel="noreferrer"
+		>
+			<label class="eyebrow" for="q-google">google</label>
+			<input
+				id="q-google"
+				name="q"
+				type="search"
+				autocomplete="off"
+				spellcheck="false"
+				bind:this={google}
+			/>
+			<button type="submit" aria-label="Search Google"><span aria-hidden="true">↵</span></button>
+		</form>
 
-	<section class="section" id="about">
-		<div class="container about">
-			<div>
-				<div class="section-head">
-					<h2>About</h2>
-				</div>
-				<p>
-					I like software that does one thing and then stops talking. The tools here are built to be
-					read, kept and understood — no accounts, no telemetry, no remote assets that break when a
-					CDN goes down.
-				</p>
-				<p>
-					If something here is useful to you, or you want to argue about the tradeoffs, email is the
-					best way to reach me.
-				</p>
-			</div>
-
-			<div class="now">
-				<h3>Recently</h3>
-				<ul>
-					{#each notes as note}
-						<li>
-							<span>{note.year}</span>
-							<span>{note.text}</span>
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</div>
+		<form
+			class="search"
+			action="https://en.wikipedia.org/w/index.php"
+			method="get"
+			target="_blank"
+			rel="noreferrer"
+		>
+			<label class="eyebrow" for="q-wikipedia">wikipedia</label>
+			<input
+				id="q-wikipedia"
+				name="search"
+				type="search"
+				autocomplete="off"
+				spellcheck="false"
+				bind:this={wikipedia}
+			/>
+			<button type="submit" aria-label="Search Wikipedia"><span aria-hidden="true">↵</span></button>
+		</form>
 	</section>
 </main>

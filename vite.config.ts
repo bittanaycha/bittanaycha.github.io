@@ -12,7 +12,7 @@ import { defineConfig } from 'vite';
  * project site. Nothing else needs to change — every link goes through
  * `base` from `$app/paths`.
  */
-const base = process.env.BASE_PATH ?? '';
+const base = (process.env.BASE_PATH ?? '') as '' | `/${string}`;
 
 export default defineConfig({
 	plugins: [
