@@ -22,26 +22,36 @@ npm run check      # type + a11y diagnostics
 | --- | --- |
 | `src/lib/styles/app.css` | The whole design system: kraft/ink tokens, type, grain, layout |
 | `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
-| `src/routes/+page.svelte` | Homepage — the plate plus the two search fields |
+| `src/routes/+page.svelte` | Homepage — two search fields, a YouTube button, a link to the plate |
+| `src/routes/plate/+page.svelte` | Plate — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — countdown, weekly bars, gates, table |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Generated — see below |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
-| `src/lib/plate/` | The pebble plate engine: masks, inks, compositing, screen noise |
+| `src/lib/plate/` | The plate engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
-| `static/photos/` | The seven photographs the plate is cut from |
+| `src/lib/components/` | `Slider`, `Segmented`, `InkStack` — the studio's controls |
+| `src/lib/decode.ts` | File/paste decoding for dropped images |
 | `static/fonts/` | Fraunces (variable) and Space Mono, self-hosted |
 
 ### The plate
 
-`src/lib/plate/` is ported from [unwalled-garden](https://github.com/bittanaycha/unwalled-garden):
-each photo is dithered and clipped to a hand-cut pebble mask, composited onto a
-black plate, then the plate is dithered again with outlines and connectors drawn
-on top. `+page.svelte` passes the polygons, photo list and link targets; the
-component does the rest at the container's size, so the plate is resolution
-independent.
+`/plate` is the dithering studio ported from
+[unwalled-garden](https://github.com/bittanaycha/unwalled-garden): a photograph or
+a drawing is cover-fitted, tone-mapped, then dithered through the chosen screen
+and printed in the ink ramp. Marks are sewn on in a worker thread, so dragging a
+slider only costs a 620px draft; the full 1400px print lands once the hand stops.
 
-If a photo changes, keep the same order in the `photos` array — the polygons and
-the links are indexed to it.
+The engine (`src/lib/plate/`, `src/lib/dither/`) is unchanged from the garden; the
+page and the three controls were rewritten in this repo's own CSS, since the
+homepage has no Tailwind. Drop or paste an image, or start from the generated
+stones.
+
+### YouTube
+
+The YouTube button opens `youtube.com`. Channels on one Google account cannot be
+linked individually: YouTube's switcher is client-side, and the only URL that
+selects a brand channel carries a per-channel `pageid` that is not exposed
+anywhere public. Switch channels from the avatar menu.
 
 ### The plan
 

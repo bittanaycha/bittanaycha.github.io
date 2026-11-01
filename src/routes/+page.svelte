@@ -1,28 +1,5 @@
 <script lang="ts">
-	import { asset } from '$app/paths';
-	import PebbleField, { type PlatePebble } from '#lib/components/PebbleField.svelte';
-
-	// Placed by hand: a few big shapes, a few small ones, and enough paper
-	// between them that the connectors have somewhere to wander.
-	const pebbles: PlatePebble[] = [
-		{ src: asset('photos/jungle.jpg'), x: 0.29, y: 0.16, r: 0.215, seed: 11 },
-		{ src: asset('photos/cat.jpg'), x: 0.74, y: 0.18, r: 0.13, seed: 23 },
-		{ src: asset('photos/kingfisher.jpg'), x: 0.62, y: 0.4, r: 0.112, seed: 31 },
-		{ src: asset('photos/seedlings.jpg'), x: 0.24, y: 0.52, r: 0.172, seed: 47 },
-		{ src: asset('photos/leopard.jpg'), x: 0.71, y: 0.62, r: 0.148, seed: 59 },
-		{ src: asset('photos/hamster.jpg'), x: 0.3, y: 0.8, r: 0.113, seed: 71 },
-		{ src: asset('photos/cactus.jpg'), x: 0.68, y: 0.87, r: 0.092, seed: 83 }
-	];
-
-	const links: [number, number][] = [
-		[0, 1],
-		[1, 2],
-		[2, 4],
-		[4, 3],
-		[3, 5],
-		[5, 6],
-		[4, 6]
-	];
+	import { resolve } from '$app/paths';
 
 	let google = $state<HTMLInputElement>();
 	let wikipedia = $state<HTMLInputElement>();
@@ -41,8 +18,6 @@
 <svelte:window on:keydown={onKeydown} />
 
 <main class="home">
-	<PebbleField {pebbles} {links} cell={2} />
-
 	<section class="searches" aria-label="Search">
 		<form
 			class="search"
@@ -82,4 +57,22 @@
 			<button type="submit" aria-label="Search Wikipedia"><span aria-hidden="true">↵</span></button>
 		</form>
 	</section>
+
+	<section class="channels" aria-label="YouTube">
+		<span class="eyebrow">youtube</span>
+		<a class="channel" href="https://www.youtube.com/" target="_blank" rel="noreferrer" title="Open YouTube">
+			<svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+				<path
+					d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.9 12 4.9 12 4.9s-6 0-7.7.4A2.7 2.7 0 0 0 2.4 7.2 28.3 28.3 0 0 0 2 12a28.3 28.3 0 0 0 .4 4.8 2.7 2.7 0 0 0 1.9 1.9c1.7.4 7.7.4 7.7.4s6 0 7.7-.4a2.7 2.7 0 0 0 1.9-1.9A28.3 28.3 0 0 0 22 12a28.3 28.3 0 0 0-.4-4.8Z"
+				/>
+				<path class="mark-cut" d="M10.2 15.3V8.7L15.8 12l-5.6 3.3Z" />
+			</svg>
+			<span>youtube</span>
+		</a>
+	</section>
+
+	<p class="elsewhere">
+		<a href={resolve('/plate')}>plate <span aria-hidden="true">↗</span></a>
+		a dithering studio
+	</p>
 </main>
