@@ -7,7 +7,11 @@
 
 	const here = $derived(page.url.pathname);
 
-	const titles: Record<string, string> = { '/running': 'running', '/dither': 'dither' };
+	const titles: Record<string, string> = {
+		'/running': 'running',
+		'/languages': 'languages',
+		'/dither': 'dither'
+	};
 	const title = $derived(titles[here] ?? 'index');
 </script>
 
@@ -31,6 +35,9 @@
 			<a href={resolve('/dither')} aria-current={here === '/dither' ? 'page' : undefined}>dither</a>
 			<a href={resolve('/running')} aria-current={here === '/running' ? 'page' : undefined}>
 				running
+			</a>
+			<a href={resolve('/languages')} aria-current={here === '/languages' ? 'page' : undefined}>
+				languages
 			</a>
 		</nav>
 	</div>

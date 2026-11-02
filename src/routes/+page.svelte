@@ -1,5 +1,16 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { almanac } from '#lib/sun';
+
 	let google = $state<HTMLInputElement>();
+
+	// Rise, set and the moon are computed in the browser: the page is
+	// prerendered, so a build-time "today" would be the deploy's today.
+	let almanacData = $state<ReturnType<typeof almanac> | null>(null);
+
+	onMount(() => {
+		almanacData = almanac(new Date());
+	});
 
 	let prompt = $state('');
 	let promptForm = $state<HTMLFormElement>();
@@ -118,7 +129,7 @@
 		</form>
 	</section>
 
-	<section class="channels" aria-label="YouTube">
+	<section class="channels" aria-label="Elsewhere">
 		<a
 			class="channel"
 			href="https://www.youtube.com/"
@@ -134,5 +145,90 @@
 				<path class="mark-cut" d="M10.2 15.3V8.7L15.8 12l-5.6 3.3Z" />
 			</svg>
 		</a>
+
+		<a
+			class="channel"
+			href="https://ankiweb.net/decks"
+			target="_blank"
+			rel="noreferrer"
+			title="Anki"
+			aria-label="Anki"
+		>
+			<svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+				<path
+					d="M12 2.6l2.75 6.45 6.95.6-5.25 4.6 1.6 6.85L12 17.4l-6.05 3.7 1.6-6.85L2.3 9.65l6.95-.6z"
+				/>
+			</svg>
+		</a>
+
+		<a
+			class="channel"
+			href="https://github.com/bittanaycha"
+			target="_blank"
+			rel="noreferrer"
+			title="GitHub"
+			aria-label="GitHub"
+		>
+			<svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+				<path
+					d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+				/>
+			</svg>
+		</a>
 	</section>
+
+	{#if almanacData}
+		<section class="almanac" aria-label="Sun and moon">
+			<div class="almanac-row almanac-head" aria-hidden="true">
+				<span></span>
+				<span class="eyebrow">place</span>
+				<span class="eyebrow">rise</span>
+				<span class="eyebrow">set</span>
+				<span class="eyebrow">day</span>
+			</div>
+
+			{#each almanacData.days as day (day.place.id)}
+				<div class="almanac-row">
+					{#if day.place.id === 'marseille'}
+						<!-- A sea horizon, a boat under sail, and a line of swell. -->
+						<svg class="place-mark" viewBox="0 0 80 36" aria-hidden="true">
+							<path d="M2 20h76" stroke-opacity="0.4" />
+							<circle cx="62" cy="10" r="4.5" />
+							<path d="M33 24V10l11 14z" />
+							<path d="M27 24h14" stroke-opacity="0.85" />
+							<path
+								d="M2 29c3-2.6 6-2.6 9 0s6 2.6 9 0 6-2.6 9 0 6 2.6 9 0 6-2.6 9 0 6 2.6 9 0 6-2.6 9 0 6 2.6 9 0"
+							/>
+							<path
+								d="M10 33c3-2.2 6-2.2 9 0s6 2.2 9 0 6-2.2 9 0 6 2.2 9 0 6-2.2 9 0 6 2.2 9 0 6-2.2 9 0"
+								stroke-opacity="0.5"
+							/>
+						</svg>
+					{:else}
+						<!-- A ground line and five conifers, tallest in the middle. -->
+						<svg class="place-mark" viewBox="0 0 80 36" aria-hidden="true">
+							<path d="M2 33h76" stroke-opacity="0.4" />
+							<path d="M13 11l-5.5 22h11z" />
+							<path d="M28 4l-6.5 29h13z" />
+							<path d="M43 14l-5 19h10z" />
+							<path d="M58 6l-6 27h12z" />
+							<path d="M70 16l-4.5 17h9z" />
+						</svg>
+					{/if}
+					<span class="place-name">{day.place.name}</span>
+					<span class="almanac-num">{day.rise}</span>
+					<span class="almanac-num">{day.set}</span>
+					<span class="almanac-num">{day.length}</span>
+				</div>
+			{/each}
+
+			<div class="almanac-row">
+				<span></span>
+				<span class="place-name">moon</span>
+				<span class="almanac-num almanac-moon">
+					{almanacData.moon.name} · {Math.round(almanacData.moon.lit * 100)}%
+				</span>
+			</div>
+		</section>
+	{/if}
 </main>

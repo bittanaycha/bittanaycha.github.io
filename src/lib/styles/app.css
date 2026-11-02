@@ -399,7 +399,8 @@ main {
 		180deg,
 		rgba(58, 42, 27, 0) 0,
 		rgba(58, 42, 27, 0.4) 7rem,
-		rgba(58, 42, 27, 0.88) 13rem
+		rgba(58, 42, 27, 0.88) 13rem,
+		rgba(58, 42, 27, 0.88) 100%
 	);
 }
 
@@ -469,27 +470,65 @@ main {
 	border-bottom: 1px solid var(--rule-strong);
 }
 
-.bar-col {
+.plot-col {
 	position: relative;
+	min-width: 0;
 	height: 100%;
 	display: flex;
 	align-items: flex-end;
 }
 
-.bar-fill {
+/* The plan is an outline; the part already run fills it from the bottom. */
+.plot {
+	position: relative;
+	display: block;
 	width: 100%;
-	background: color-mix(in oklab, var(--ink) 26%, transparent);
-	transition: background 0.2s ease;
+	border: 1px solid color-mix(in oklab, var(--ink) 26%, transparent);
+	background: transparent;
+}
+.plot-col--gate .plot {
+	border-color: color-mix(in oklab, var(--accent) 40%, transparent);
 }
 
-.bar-col--done .bar-fill {
-	background: color-mix(in oklab, var(--ink) 14%, transparent);
+.plot-log {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: color-mix(in oklab, var(--ink) 62%, transparent);
 }
-.bar-col--now .bar-fill {
+.plot-col--done .plot-log {
+	background: color-mix(in oklab, var(--ink) 38%, transparent);
+}
+.plot-col--now .plot-log {
 	background: var(--accent);
 }
-.bar-col--gate .bar-fill {
-	background: color-mix(in oklab, var(--accent) 55%, transparent);
+
+.legend {
+	display: flex;
+	gap: 1.25rem;
+	margin: 0.75rem 0 0;
+	font-family: var(--mono);
+	font-size: 0.6rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+.swatch {
+	display: inline-block;
+	width: 0.5rem;
+	height: 0.5rem;
+}
+.swatch--plan {
+	border: 1px solid color-mix(in oklab, var(--ink) 30%, transparent);
+}
+.swatch--log {
+	background: color-mix(in oklab, var(--ink) 62%, transparent);
 }
 
 .tick {
@@ -506,7 +545,7 @@ main {
 
 .scale {
 	display: grid;
-	grid-template-columns: repeat(26, 1fr);
+	grid-template-columns: repeat(26, minmax(0, 1fr));
 	gap: 2px;
 	margin-top: 0.4rem;
 }
@@ -727,4 +766,388 @@ main {
 	font-variation-settings:
 		'SOFT' 60,
 		'WONK' 1;
+}
+
+/* ============================================================================
+   Running — today, tabs, log, pace
+   ========================================================================= */
+.today {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: end;
+	gap: 1rem 2rem;
+	margin-top: clamp(1.75rem, 4vw, 2.5rem);
+	border-top: 1px solid var(--rule);
+	border-bottom: 1px solid var(--rule);
+	padding: 1rem 0 1.1rem;
+}
+
+.today-session {
+	margin: 0.35rem 0 0.2rem;
+	font-family: var(--serif);
+	font-size: clamp(1.6rem, 4vw, 2.2rem);
+	line-height: 1;
+	letter-spacing: -0.02em;
+	color: var(--ink);
+}
+
+.today-km {
+	display: flex;
+	align-items: baseline;
+	gap: 0.4rem;
+	margin: 0;
+	font-family: var(--mono);
+	font-size: 1.15rem;
+	color: var(--ink-dim);
+	font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+	display: flex;
+	gap: 1.75rem;
+	margin-top: 1.5rem;
+	border-bottom: 1px solid var(--rule);
+}
+
+.tab {
+	appearance: none;
+	background: none;
+	border: 0;
+	border-bottom: 1px solid transparent;
+	margin-bottom: -1px;
+	padding: 0 0 0.55rem;
+	font-family: var(--mono);
+	font-size: 0.7rem;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+	cursor: pointer;
+	transition:
+		color 0.15s ease,
+		border-color 0.15s ease;
+}
+.tab:hover {
+	color: var(--ink);
+}
+.tab[aria-selected='true'] {
+	color: var(--accent);
+	border-bottom-color: var(--accent);
+}
+
+[role='tabpanel'] {
+	padding-top: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.log-facts {
+	margin: 0;
+}
+
+.log {
+	margin-top: 1.75rem;
+}
+
+.log td {
+	vertical-align: top;
+}
+
+.log .w-date {
+	white-space: nowrap;
+}
+
+.weeks .h-note,
+.weeks .run-note {
+	padding-left: 1.75rem;
+}
+
+.run-note {
+	max-width: 22rem;
+	font-family: var(--serif);
+	font-size: 0.9rem;
+	line-height: 1.35;
+	color: var(--ink-faint);
+}
+
+.pace {
+	display: grid;
+	grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+	gap: 2rem 3rem;
+	align-items: start;
+}
+
+.pace-form {
+	display: grid;
+	gap: 1.5rem;
+}
+
+.field {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.clock {
+	width: 100%;
+	background: none;
+	border: 0;
+	border-bottom: 1px solid var(--rule);
+	padding: 0.35rem 0;
+	color: var(--ink);
+	font-family: var(--mono);
+	font-size: 1.15rem;
+	font-variant-numeric: tabular-nums;
+}
+.clock:focus {
+	outline: none;
+	border-bottom-color: var(--accent);
+}
+
+.pace-big {
+	margin: 0.35rem 0 1.25rem;
+	font-family: var(--serif);
+	font-weight: 400;
+	font-size: clamp(2.75rem, 8vw, 4rem);
+	line-height: 0.9;
+	letter-spacing: -0.03em;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	font-variation-settings:
+		'SOFT' 60,
+		'WONK' 1;
+}
+.pace-big span {
+	margin-left: 0.45rem;
+	font-family: var(--mono);
+	font-size: 0.75rem;
+	letter-spacing: 0.08em;
+	color: var(--ink-faint);
+}
+
+.pace-out .facts {
+	margin-top: 0;
+}
+
+.run-links {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.5rem 1.25rem;
+	margin-top: clamp(2.5rem, 6vw, 4rem);
+	border-top: 1px solid var(--rule);
+	padding-top: 0.9rem;
+	font-family: var(--mono);
+	font-size: 0.65rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.run-links a {
+	color: var(--ink-dim);
+	border-bottom: 1px solid transparent;
+	transition:
+		color 0.15s ease,
+		border-color 0.15s ease;
+}
+.run-links a:hover {
+	color: var(--accent);
+	border-bottom-color: var(--accent-deep);
+}
+
+/* ============================================================================
+   Almanac — two places and the moon, on the index
+   ========================================================================= */
+.almanac {
+	display: grid;
+	gap: 0.6rem;
+	margin-top: clamp(2rem, 5vw, 2.75rem);
+	border-top: 1px solid var(--rule);
+	padding-top: 1rem;
+}
+
+.almanac-row {
+	display: grid;
+	grid-template-columns: 5.25rem 6.5rem minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.almanac-head {
+	padding-bottom: 0.25rem;
+}
+
+.place-mark {
+	width: 5.25rem;
+	height: 2.35rem;
+	color: color-mix(in oklab, var(--ink-faint) 80%, transparent);
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	overflow: visible;
+}
+
+.place-name {
+	font-family: var(--mono);
+	font-size: 0.65rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+
+.almanac-num {
+	font-family: var(--mono);
+	font-size: 0.78rem;
+	color: var(--ink-dim);
+	font-variant-numeric: tabular-nums;
+}
+
+.almanac-moon {
+	grid-column: 3 / -1;
+}
+
+/* ============================================================================
+   Languages — six ladders, A1 to C2
+   ========================================================================= */
+.languages {
+	max-width: 58rem;
+	margin: 0 auto;
+	padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) clamp(3rem, 8vw, 6rem);
+	background: linear-gradient(
+		180deg,
+		rgba(58, 42, 27, 0) 0,
+		rgba(58, 42, 27, 0.4) 7rem,
+		rgba(58, 42, 27, 0.88) 13rem,
+		rgba(58, 42, 27, 0.88) 100%
+	);
+}
+
+.langs {
+	list-style: none;
+	margin: clamp(2rem, 5vw, 3rem) 0 0;
+	padding: 0;
+	border-top: 1px solid var(--rule);
+}
+
+.lang {
+	display: grid;
+	grid-template-columns: 3rem 8rem minmax(0, 1fr) 5rem;
+	align-items: center;
+	gap: 1rem;
+	padding: 1rem 0;
+	border-bottom: 1px solid color-mix(in oklab, var(--rule) 45%, transparent);
+}
+
+.lang-code {
+	font-family: var(--mono);
+	font-size: 0.95rem;
+	letter-spacing: 0.1em;
+	color: var(--ink);
+}
+
+.lang-code.assumed {
+	text-decoration: underline dotted var(--rule-strong);
+	text-underline-offset: 4px;
+}
+
+.lang-name {
+	font-family: var(--serif);
+	font-size: 1rem;
+	color: var(--ink-dim);
+}
+
+.ladder {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 4px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ladder li {
+	border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+	padding: 0.42rem 0;
+	text-align: center;
+	font-family: var(--mono);
+	font-size: 0.6rem;
+	letter-spacing: 0.04em;
+	color: color-mix(in oklab, var(--ink-faint) 45%, transparent);
+}
+
+.ladder li.held {
+	border-color: color-mix(in oklab, var(--rule-strong) 70%, transparent);
+	background: color-mix(in oklab, var(--ink) 9%, transparent);
+	color: var(--ink);
+}
+
+.ladder li.gap {
+	border-style: dashed;
+	border-color: color-mix(in oklab, var(--rule) 55%, transparent);
+	color: var(--ink-faint);
+}
+
+.ladder li.aim {
+	border-color: color-mix(in oklab, var(--accent) 75%, transparent);
+	color: var(--accent);
+}
+
+.lang-move {
+	font-family: var(--mono);
+	font-size: 0.65rem;
+	text-align: right;
+	white-space: nowrap;
+	color: var(--ink-faint);
+	font-variant-numeric: tabular-nums;
+}
+.lang-move .arrow {
+	padding: 0 0.3rem;
+	color: var(--accent);
+}
+
+@media (max-width: 34rem) {
+	.today {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+	.pace {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.log .h-time,
+	.log .h-pace,
+	.log .h-rpe {
+		display: none;
+	}
+	.weeks .h-long,
+	.weeks .h-runs {
+		display: none;
+	}
+	.almanac-row {
+		grid-template-columns: 3.75rem 4.75rem repeat(3, minmax(0, 1fr));
+		gap: 0.4rem;
+	}
+	.almanac-num {
+		font-size: 0.66rem;
+		letter-spacing: 0.02em;
+	}
+	.place-mark {
+		width: 3.75rem;
+		height: 1.7rem;
+	}
+	.lang {
+		grid-template-columns: 2.5rem 1fr auto;
+		grid-template-areas:
+			'code name move'
+			'ladder ladder ladder';
+	}
+	.lang-code {
+		grid-area: code;
+	}
+	.lang-name {
+		grid-area: name;
+	}
+	.lang-move {
+		grid-area: move;
+	}
+	.ladder {
+		grid-area: ladder;
+	}
 }

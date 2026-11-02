@@ -14,6 +14,7 @@ npm run dev        # http://localhost:5173
 npm run build      # prerenders into build/
 npm run preview    # serve the production build
 npm run check      # type + a11y diagnostics
+npm run sync       # regenerate the day table and run log from the vault
 ```
 
 ## Where things live
@@ -23,10 +24,17 @@ npm run check      # type + a11y diagnostics
 | `src/lib/styles/app.css` | The whole design system: kraft/ink tokens, type, grain, layout |
 | `static/background.webp` | The leaf photograph, printed behind every page |
 | `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
-| `src/routes/+page.svelte` | Homepage — google, wikipedia and deepseek fields, a YouTube button |
+| `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
+| `src/routes/languages/+page.svelte` | Languages — one ladder per language, A1 to C2 |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
-| `src/routes/running/+page.svelte` | Marathon page — countdown, weekly bars, gates, table |
-| `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Generated — see below |
+| `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
+| `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
+| `src/lib/days.ts` | One row per plan day, from the week notes. Generated — see below |
+| `src/lib/log.ts` | Every run in the training log. Generated — see below |
+| `src/lib/sun.ts` | NOAA sunrise/sunset and the moon phase behind the almanac |
+| `src/lib/pace.ts` | VDOT, threshold pace and rep ranges |
+| `src/lib/languages.ts` | The six languages, current level to target |
+| `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts` and `log.ts` |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
 | `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
@@ -67,22 +75,31 @@ linked individually: YouTube's switcher is client-side, and the only URL that
 selects a brand channel carries a per-channel `pageid` that is not exposed
 anywhere public. Switch channels from the avatar menu.
 
-### The plan
+### The vault
 
-`src/lib/plan.ts` is generated from the Obsidian vault at
-`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Yggdrasil/Marathon/plan.json`.
-Edit the plan in the vault, then regenerate:
+The marathon plan and the training log live in the Obsidian vault at
+`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Yggdrasil/Marathon/`.
+
+`src/lib/plan.ts` is copied across from `plan.json` by hand. The day-by-day table
+and the run log are generated from the vault:
 
 ```bash
-node -e '
-const fs = require("fs");
-const plan = JSON.parse(fs.readFileSync(process.env.HOME + "/Library/Mobile Documents/iCloud~md~obsidian/Documents/Yggdrasil/Marathon/plan.json", "utf8"));
-console.log(JSON.stringify({ weeks: plan.weeks.length, race: plan.race_date, start: plan.start_date }));
-'
+npm run sync
 ```
 
-The counts on the page (training km, peak week) are derived from that data, so
-they follow the vault automatically.
+That reads `plan.json`, the day table in each `Weeks/Week NN.md`, and
+`Training Log.md`, then writes `src/lib/days.ts` and `src/lib/log.ts`. Set
+`YGDRASIL_VAULT` to read a different vault. The script exits non-zero on a
+weekday that does not match its date, a plan week with no note, or a run dated
+outside the plan weeks, so a broken table fails instead of quietly dropping rows.
+
+The training log is the source of truth: week 3 planned 28.0 km and logged 4.3 km,
+and the bars, the table and the totals all take the logged number from
+`Training Log.md`.
+
+The `/running` footer opens `plan.json`, the current week's note, the log and the
+gate weeks through `obsidian://` links, so the page is a way into the vault rather
+than a copy of it.
 
 ## Deploying
 
@@ -115,4 +132,6 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   `--rule` is `#a68d6c`, `--ink-faint` is `#b1a189`, and the running page prints
   its table on a gradient sheet (`linear-gradient` to 88% `--paper-deep`) so the
   12px numbers do not land on leaf highlights.
+- The almanac and today's session are computed in the browser (`onMount`), not at
+  build time: a prerendered page would freeze the day it was built.
 - No runtime dependencies, no server, no remote fonts or assets.
