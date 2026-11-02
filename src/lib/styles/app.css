@@ -1099,7 +1099,27 @@ main {
 	left: 0;
 	top: 0.2rem;
 	bottom: 0.2rem;
-	border-left: 1px solid var(--rule-strong);
+	width: 0.42rem;
+	background: var(--rule-strong);
+	clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+	opacity: 0.75;
+}
+
+/* A knot where each branch leaves the trunk. */
+.branch {
+	position: relative;
+}
+
+.branch::before {
+	content: '';
+	position: absolute;
+	left: -0.13rem;
+	top: calc(1.55rem + 2.55rem);
+	width: 0.3rem;
+	height: 0.3rem;
+	border-radius: 50%;
+	background: var(--rule-strong);
+	opacity: 0.75;
 }
 
 /* Two roots flaring at the base of the trunk. */
@@ -1184,7 +1204,7 @@ main {
 	height: 100%;
 	overflow: visible;
 	fill: none;
-	stroke: color-mix(in oklab, var(--pigment) 45%, transparent);
+	stroke: color-mix(in oklab, var(--pigment) 58%, transparent);
 	stroke-width: 1;
 	vector-effect: non-scaling-stroke;
 }
@@ -1203,8 +1223,8 @@ main {
 	position: absolute;
 	display: grid;
 	place-items: center;
-	width: 1.75rem;
-	height: 1.15rem;
+	width: 1.95rem;
+	height: 1.25rem;
 	border: 1px solid color-mix(in oklab, var(--pigment) 30%, transparent);
 	border-radius: 0 100% 0 100%;
 	background: color-mix(in oklab, var(--paper-light) 70%, transparent);

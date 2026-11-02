@@ -4,7 +4,7 @@
 	/* One cubic for every branch: M0 26 C200 26 400 7 600 7 in a 600×34 box.
 	   The leaves are placed on the same curve so they sit on the wood. */
 	const TOP = 34;
-	const P = [26, 26, 7, 7] as const;
+	const P = [30, 30, 4, 4] as const;
 
 	const onCurve = (t: number): number => {
 		const u = 1 - t;
@@ -51,7 +51,7 @@
 							preserveAspectRatio="none"
 							aria-hidden="true"
 						>
-							<path d="M0 26C200 26 400 7 600 7" />
+							<path d="M0 30C200 30 400 4 600 4" />
 						</svg>
 
 						<ol class="leaves" aria-label="{language.name}: {language.level} to {language.target}">
