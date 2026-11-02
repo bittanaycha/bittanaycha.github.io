@@ -176,10 +176,14 @@
 		</div>
 
 		{#each almanacData.days as day (day.place.id)}
-			<div
-				class="place island place--{day.place.id}"
-				style:--strip={`url('${strips[day.place.id as keyof typeof strips]}')`}
-			>
+			<div class="place island place--{day.place.id}">
+				<img
+					class="place-photo"
+					src={strips[day.place.id as keyof typeof strips]}
+					alt=""
+					width="984"
+					height="300"
+				/>
 				<span class="place-name">{day.place.name}</span>
 
 				<span class="place-times">
