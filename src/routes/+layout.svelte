@@ -18,13 +18,13 @@
 <svelte:head>
 	<title>{title}</title>
 	<link rel="icon" href={asset('favicon.svg')} type="image/svg+xml" />
-	<meta name="theme-color" content="#463523" />
-	<meta name="color-scheme" content="dark" />
+	<meta name="theme-color" content="#e8dcc4" />
+	<meta name="color-scheme" content="light" />
 </svelte:head>
 
 <div
 	class="paper"
-	style:background-image={`url('${asset('background.webp')}')`}
+	style:--photo={`url('${asset('background.webp')}')`}
 	aria-hidden="true"
 ></div>
 

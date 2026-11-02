@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { asset } from '$app/paths';
 	import { almanac } from '#lib/sun';
+	import AlmanacIcon from '#lib/components/AlmanacIcon.svelte';
+
+	const plates = ['deer', 'falcon', 'hare', 'horse', 'swift'] as const;
+
+	const strips = {
+		marseille: asset('strips/marseille.webp'),
+		wigginton: asset('strips/home.webp')
+	} as const;
 
 	let google = $state<HTMLInputElement>();
 
@@ -148,21 +157,6 @@
 
 		<a
 			class="channel"
-			href="https://ankiweb.net/decks"
-			target="_blank"
-			rel="noreferrer"
-			title="Anki"
-			aria-label="Anki"
-		>
-			<svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
-				<path
-					d="M12 2.6l2.75 6.45 6.95.6-5.25 4.6 1.6 6.85L12 17.4l-6.05 3.7 1.6-6.85L2.3 9.65l6.95-.6z"
-				/>
-			</svg>
-		</a>
-
-		<a
-			class="channel"
 			href="https://github.com/bittanaycha"
 			target="_blank"
 			rel="noreferrer"
@@ -179,56 +173,58 @@
 
 	{#if almanacData}
 		<section class="almanac" aria-label="Sun and moon">
-			<div class="almanac-row almanac-head" aria-hidden="true">
-				<span></span>
+			<div class="almanac-title">
+				<AlmanacIcon kind="sun" />
+				<span class="eyebrow">sun</span>
+			</div>
+
+			<div class="almanac-head" aria-hidden="true">
 				<span class="eyebrow">place</span>
+				<span></span>
 				<span class="eyebrow">rise</span>
 				<span class="eyebrow">set</span>
 				<span class="eyebrow">day</span>
 			</div>
 
 			{#each almanacData.days as day (day.place.id)}
-				<div class="almanac-row">
-					{#if day.place.id === 'marseille'}
-						<!-- A sea horizon, a boat under sail, and a line of swell. -->
-						<svg class="place-mark" viewBox="0 0 80 36" aria-hidden="true">
-							<path d="M2 20h76" stroke-opacity="0.4" />
-							<circle cx="62" cy="10" r="4.5" />
-							<path d="M33 24V10l11 14z" />
-							<path d="M27 24h14" stroke-opacity="0.85" />
-							<path
-								d="M2 29c3-2.6 6-2.6 9 0s6 2.6 9 0 6-2.6 9 0 6 2.6 9 0 6-2.6 9 0 6 2.6 9 0 6-2.6 9 0 6 2.6 9 0"
-							/>
-							<path
-								d="M10 33c3-2.2 6-2.2 9 0s6 2.2 9 0 6-2.2 9 0 6 2.2 9 0 6-2.2 9 0 6 2.2 9 0 6-2.2 9 0"
-								stroke-opacity="0.5"
-							/>
-						</svg>
-					{:else}
-						<!-- A ground line and five conifers, tallest in the middle. -->
-						<svg class="place-mark" viewBox="0 0 80 36" aria-hidden="true">
-							<path d="M2 33h76" stroke-opacity="0.4" />
-							<path d="M13 11l-5.5 22h11z" />
-							<path d="M28 4l-6.5 29h13z" />
-							<path d="M43 14l-5 19h10z" />
-							<path d="M58 6l-6 27h12z" />
-							<path d="M70 16l-4.5 17h9z" />
-						</svg>
-					{/if}
+				<div class="place">
 					<span class="place-name">{day.place.name}</span>
+					<img
+						class="place-strip"
+						src={strips[day.place.id as keyof typeof strips]}
+						alt=""
+						aria-hidden="true"
+						loading="lazy"
+					/>
 					<span class="almanac-num">{day.rise}</span>
 					<span class="almanac-num">{day.set}</span>
 					<span class="almanac-num">{day.length}</span>
 				</div>
 			{/each}
 
-			<div class="almanac-row">
-				<span></span>
-				<span class="place-name">moon</span>
-				<span class="almanac-num almanac-moon">
-					{almanacData.moon.name} · {Math.round(almanacData.moon.lit * 100)}%
-				</span>
+			<div class="almanac-title almanac-moon-title">
+				<AlmanacIcon kind="moon" />
+				<span class="eyebrow">moon</span>
 			</div>
+
+			<div class="moon-row">
+				<span class="moon-phase">{almanacData.moon.name}</span>
+				<span class="almanac-num">{Math.round(almanacData.moon.lit * 100)}%</span>
+			</div>
+		</section>
+
+		<section class="bestiary" aria-label="Plates">
+			{#each plates as plate (plate)}
+				<figure class="plate">
+					<img
+						src={asset(`animals/${plate}.webp` as 'animals/deer.webp')}
+						alt=""
+						aria-hidden="true"
+						loading="lazy"
+					/>
+					<figcaption class="eyebrow">{plate}</figcaption>
+				</figure>
+			{/each}
 		</section>
 	{/if}
 </main>

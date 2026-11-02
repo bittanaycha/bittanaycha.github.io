@@ -17,12 +17,14 @@ export type Place = {
 	name: string;
 	lat: number;
 	lon: number;
+	/** The dithered landscape bound to this place, one strip per row. */
+	strip: string;
 };
 
-/** Home, and the village where the other half of home is. */
+/** Two homes: the sea, and the wood. */
 export const places: Place[] = [
-	{ id: 'marseille', name: 'marseille', lat: 43.2965, lon: 5.3698 },
-	{ id: 'wigginton', name: 'wigginton', lat: 52.0116, lon: -1.433 }
+	{ id: 'marseille', name: 'marseille', lat: 43.2965, lon: 5.3698, strip: 'strips/marseille.webp' },
+	{ id: 'wigginton', name: 'home', lat: 52.0116, lon: -1.433, strip: 'strips/home.webp' }
 ];
 
 const julian = (date: Date): number => date.valueOf() / DAY_MS - 0.5 + J1970;

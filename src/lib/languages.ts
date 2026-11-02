@@ -1,6 +1,6 @@
 /**
- * Six languages, one row each. The ladder runs A1 to C2 and the row shows the
- * level held, then the level aimed at.
+ * Six languages, one branch each. The ladder runs A1 to C2 and the branch shows
+ * the level held, then the level aimed at.
  *
  * Where the vault states a level it is used as is: French and Spanish are B1
  * (Wizard's Tower), with C1 the target there; Japanese is on its way back to
@@ -21,15 +21,17 @@ export type Language = {
 	target: Level;
 	/** Stated in the vault, or a placeholder until it is. */
 	stated: boolean;
+	/** Pigment for this branch: leaf fill, rule and bud. */
+	colour: string;
 };
 
 export const languages: Language[] = [
-	{ code: 'FR', name: 'french', level: 'B1', target: 'C1', stated: true },
-	{ code: 'JP', name: 'japanese', level: 'B1', target: 'B2', stated: true },
-	{ code: 'ES', name: 'spanish', level: 'B1', target: 'C1', stated: true },
-	{ code: 'IT', name: 'italian', level: 'A2', target: 'B2', stated: false },
-	{ code: 'CN', name: 'mandarin', level: 'A1', target: 'B2', stated: false },
-	{ code: 'WE', name: 'welsh', level: 'A1', target: 'B1', stated: false }
+	{ code: 'FR', name: 'french', level: 'B1', target: 'C1', stated: true, colour: '#8a6a2f' },
+	{ code: 'JP', name: 'japanese', level: 'B1', target: 'B2', stated: true, colour: '#9c4f3d' },
+	{ code: 'ES', name: 'spanish', level: 'B1', target: 'C1', stated: true, colour: '#b07c2a' },
+	{ code: 'IT', name: 'italian', level: 'A2', target: 'B2', stated: false, colour: '#5a7250' },
+	{ code: 'CN', name: 'mandarin', level: 'A1', target: 'B2', stated: false, colour: '#3f6b6a' },
+	{ code: 'WE', name: 'welsh', level: 'A1', target: 'B1', stated: false, colour: '#7b5a72' }
 ];
 
 export const index = (level: Level): number => CEFR.indexOf(level);

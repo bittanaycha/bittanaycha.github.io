@@ -1,7 +1,8 @@
 # homepage
 
-A personal homepage and a marathon training page. SvelteKit, fully prerendered,
-served as static files from GitHub Pages at <https://bittanaycha.github.io>.
+A personal homepage, a marathon training page and a language tree. SvelteKit,
+fully prerendered, served as static files from GitHub Pages at
+<https://bittanaycha.github.io>.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
 `dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
@@ -21,11 +22,13 @@ npm run sync       # regenerate the day table and run log from the vault
 
 | File | What it controls |
 | --- | --- |
-| `src/lib/styles/app.css` | The whole design system: kraft/ink tokens, type, grain, layout |
-| `static/background.webp` | The leaf photograph, printed behind every page |
+| `src/lib/styles/app.css` | The whole design system: cream/sepia tokens, type, grain, layout |
+| `static/background.webp` | The leaf photograph, multiplied into the paper behind every page |
+| `static/strips/` | The dithered coast and forest strips in the almanac |
+| `static/animals/` | The five engraved plates (deer, falcon, hare, horse, swift) |
 | `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
 | `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
-| `src/routes/languages/+page.svelte` | Languages — one ladder per language, A1 to C2 |
+| `src/routes/languages/+page.svelte` | Languages — one branch per language, A1 to C2 as leaves |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
@@ -38,9 +41,9 @@ npm run sync       # regenerate the day table and run log from the vault
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
 | `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
-| `src/lib/components/` | `Slider`, `Segmented`, `InkStack` — the studio's controls |
+| `src/lib/components/` | `Slider`, `Segmented`, `InkStack` (studio controls), `AlmanacIcon` (sun and moon) |
 | `src/lib/decode.ts` | File/paste decoding for dropped images |
-| `static/fonts/` | Fraunces (variable) and Space Mono, self-hosted |
+| `static/fonts/` | EB Garamond (variable, roman and italic) and Courier Prime, self-hosted |
 
 ### The dither studio
 
@@ -124,14 +127,19 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
-- The background photograph is a fixed layer, multiplied into the paper tone
-  (`#7a6550` at `mix-blend-mode: multiply`) rather than blurred and veiled: the
-  leaves stay sharp, and an alpha veil would have greyed them out. `main` carries
-  `z-index: 5` so page content paints above it.
-- Because the picture is prominent, hairlines and small print are pitched for it:
-  `--rule` is `#a68d6c`, `--ink-faint` is `#b1a189`, and the running page prints
-  its table on a gradient sheet (`linear-gradient` to 88% `--paper-deep`) so the
-  12px numbers do not land on leaf highlights.
+- The sheet is cream (`--paper` `#e8dcc4`) and the ink is sepia-black. The
+  background photograph is a fixed layer at `mix-blend-mode: multiply` over the
+  paper; `.paper::before` is the photograph (opacity 0.4, brightness 1.42) and
+  `.paper::after` is a vertical cream wash that protects the top and bottom of
+  the page. `main` carries `z-index: 5` so content paints above it.
+- Page sheets that need their own ground (the running table, the language tree)
+  fade in with a `linear-gradient` from transparent to 90% `--paper`, so their
+  small print does not land on leaf highlights.
+- The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
+  fills the disc and the crescent, so they read as printed woodcuts rather than
+  icons. The moon sits in its own block below the two place rows.
+- The language tree is one `<ol>` of branches; the leaves are placed on the same
+  cubic curve as the branch stroke, so every leaf sits on the wood at any width.
 - The almanac and today's session are computed in the browser (`onMount`), not at
   build time: a prerendered page would freeze the day it was built.
 - No runtime dependencies, no server, no remote fonts or assets.

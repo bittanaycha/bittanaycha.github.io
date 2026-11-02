@@ -1,61 +1,55 @@
 /* ============================================================================
-   Type — two self-hosted families.
-   Fraunces (variable) for everything that should read like a book jacket;
-   Space Mono for the small print: labels, numbers, running heads.
+   Type — Garamond for the page, Courier for figures.
+   EB Garamond is an old-style face: small x-height, sloped shoulders, the
+   look of a printed book rather than a screen. Courier Prime keeps the
+   tables' numbers in step.
    ========================================================================= */
 @font-face {
-	font-family: 'Fraunces';
-	src: url('/fonts/fraunces.woff2') format('woff2');
-	font-weight: 100 900;
+	font-family: 'EB Garamond';
+	src: url('/fonts/eb-garamond.woff2') format('woff2');
+	font-weight: 400 800;
 	font-style: normal;
 	font-display: swap;
 }
 @font-face {
-	font-family: 'Fraunces';
-	src: url('/fonts/fraunces-italic.woff2') format('woff2');
-	font-weight: 100 900;
+	font-family: 'EB Garamond';
+	src: url('/fonts/eb-garamond-italic.woff2') format('woff2');
+	font-weight: 400 800;
 	font-style: italic;
 	font-display: swap;
 }
 @font-face {
-	font-family: 'Space Mono';
-	src: url('/fonts/space-mono-400.woff2') format('woff2');
+	font-family: 'Courier Prime';
+	src: url('/fonts/courier-prime.woff2') format('woff2');
 	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'Space Mono';
-	src: url('/fonts/space-mono-700.woff2') format('woff2');
-	font-weight: 700;
 	font-style: normal;
 	font-display: swap;
 }
 
 /* ============================================================================
-   Tokens — one sheet of kraft board, bone ink, one cyan drum.
-   There is no card colour: structure is hairlines and space, like a printed
-   page. Every token is a print value, not a UI value.
+   Tokens — a cream sheet, sepia ink, a teal rule.
+   The photograph is printed into the sheet, not laid over it, so the ink has
+   to stay darker than the leaves. Every value here is a print value.
    ========================================================================= */
 :root {
-	--paper: #463523;
-	--paper-deep: #3a2a1b;
-	--paper-light: #54412c;
-	--ink: #ece5d5;
-	--ink-dim: #c6b9a3;
-	--ink-faint: #b1a189;
-	--rule: #a68d6c;
-	--rule-strong: #c0a583;
-	--accent: #7cc6de;
-	--accent-deep: #3f8da6;
+	--paper: #e8dcc4;
+	--paper-deep: #dbccae;
+	--paper-light: #f3ead8;
+	--ink: #2c1f15;
+	--ink-dim: #533d28;
+	--ink-faint: #6d5336;
+	--rule: #a98f6d;
+	--rule-strong: #856a47;
+	--accent: #2f6f7e;
+	--accent-deep: #1f5060;
 
-	--serif: 'Fraunces', 'Iowan Old Style', Georgia, serif;
-	--mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--serif: 'EB Garamond', 'Iowan Old Style', Georgia, serif;
+	--mono: 'Courier Prime', ui-monospace, SFMono-Regular, Menlo, monospace;
 
 	--gutter: clamp(1.25rem, 5vw, 3.5rem);
 	--measure: 44rem;
 
-	color-scheme: dark;
+	color-scheme: light;
 }
 
 /* ============================================================================
@@ -89,36 +83,41 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
-/* The photograph behind everything: one fixed sheet, printed on the kraft
-   stock. The image URL is set in the layout, where `asset()` can add the
-   deploy's base path. */
+/* The photograph behind everything: one fixed sheet, printed into the stock.
+   `--photo` is set in the layout, where `asset()` can add the base path. */
 .paper {
 	position: fixed;
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
 	background-color: var(--paper);
-	background-size: cover;
-	background-position: center;
 }
 
-/* Multiply the picture into the paper's own tone. The leaves keep their
-   contrast and their dither, but their highlights stop out-shouting the type —
-   an alpha veil would lift the blacks and grey the whole sheet out. */
+/* Multiplied at partial strength: the leaves keep their shape and grain, the
+   paper stays cream. Anything heavier and the sheet reads as a dark plate. */
 .paper::before {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: #7a6550;
+	background-image: var(--photo);
+	background-size: cover;
+	background-position: center;
+	opacity: 0.4;
 	mix-blend-mode: multiply;
+	filter: contrast(1.16) brightness(1.42);
 }
 
-/* A flat 10% of the paper tone settles the picture into the sheet. */
+/* A wash of paper settles the middle of the sheet so the type keeps its edge. */
 .paper::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: rgba(58, 42, 27, 0.1);
+	background: linear-gradient(
+		180deg,
+		rgba(232, 220, 196, 0.5) 0,
+		rgba(232, 220, 196, 0.12) 45%,
+		rgba(232, 220, 196, 0.45) 100%
+	);
 }
 
 /* Board grain over the whole surface: the plate, the type and the paper share
@@ -154,12 +153,14 @@ a {
    Small print
    ========================================================================= */
 .eyebrow {
-	font-family: var(--mono);
-	font-size: 0.625rem;
+	font-family: var(--serif);
+	font-size: 0.72rem;
+	font-weight: 600;
 	line-height: 1.4;
-	letter-spacing: 0.18em;
+	letter-spacing: 0.2em;
 	text-transform: uppercase;
 	color: var(--ink-faint);
+	font-feature-settings: 'kern' 1;
 }
 .rule {
 	border: 0;
@@ -397,10 +398,10 @@ main {
 	   closes in where the table starts. */
 	background: linear-gradient(
 		180deg,
-		rgba(58, 42, 27, 0) 0,
-		rgba(58, 42, 27, 0.4) 7rem,
-		rgba(58, 42, 27, 0.88) 13rem,
-		rgba(58, 42, 27, 0.88) 100%
+		rgba(232, 220, 196, 0) 0,
+		rgba(232, 220, 196, 0.5) 7rem,
+		rgba(232, 220, 196, 0.9) 13rem,
+		rgba(232, 220, 196, 0.9) 100%
 	);
 }
 
@@ -956,52 +957,119 @@ main {
    ========================================================================= */
 .almanac {
 	display: grid;
-	gap: 0.6rem;
+	gap: 0.55rem;
 	margin-top: clamp(2rem, 5vw, 2.75rem);
 	border-top: 1px solid var(--rule);
-	padding-top: 1rem;
+	padding-top: 1.1rem;
 }
 
-.almanac-row {
-	display: grid;
-	grid-template-columns: 5.25rem 6.5rem minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+.almanac-title {
+	display: flex;
 	align-items: center;
-	gap: 0.75rem;
+	gap: 0.55rem;
+	color: var(--ink);
+}
+
+.almanac-title .eyebrow {
+	color: var(--ink);
+}
+
+.almanac-head .eyebrow {
+	color: var(--ink-dim);
 }
 
 .almanac-head {
-	padding-bottom: 0.25rem;
+	display: grid;
+	grid-template-columns: 6.5rem minmax(0, 1fr) 4.5rem 4.5rem 4.5rem;
+	gap: 0.9rem;
+	align-items: baseline;
+	padding-top: 0.35rem;
 }
 
-.place-mark {
-	width: 5.25rem;
-	height: 2.35rem;
-	color: color-mix(in oklab, var(--ink-faint) 80%, transparent);
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-	overflow: visible;
+.place {
+	display: grid;
+	grid-template-columns: 6.5rem minmax(0, 1fr) 4.5rem 4.5rem 4.5rem;
+	gap: 0.9rem;
+	align-items: center;
+}
+
+.place-strip {
+	display: block;
+	width: 100%;
+	height: 3.2rem;
+	object-fit: cover;
+	object-position: center;
+	border-top: 1px solid var(--rule-strong);
+	border-bottom: 1px solid var(--rule-strong);
+	mix-blend-mode: multiply;
+	opacity: 0.92;
 }
 
 .place-name {
-	font-family: var(--mono);
-	font-size: 0.65rem;
-	letter-spacing: 0.14em;
+	font-family: var(--serif);
+	font-size: 0.82rem;
+	letter-spacing: 0.16em;
 	text-transform: uppercase;
-	color: var(--ink-faint);
+	color: var(--ink);
 }
 
 .almanac-num {
 	font-family: var(--mono);
-	font-size: 0.78rem;
-	color: var(--ink-dim);
+	font-size: 0.8rem;
+	color: var(--ink);
 	font-variant-numeric: tabular-nums;
 }
 
-.almanac-moon {
-	grid-column: 3 / -1;
+.almanac-moon-title {
+	margin-top: 1.6rem;
+	border-top: 1px solid var(--rule);
+	padding-top: 1.1rem;
+}
+
+.almanac-moon-title .almanac-icon {
+	width: 2.1rem;
+	height: 2.1rem;
+}
+
+.moon-row {
+	display: flex;
+	align-items: baseline;
+	gap: 1.2rem;
+	padding-left: 2.75rem;
+}
+
+.moon-phase {
+	font-family: var(--serif);
+	font-style: italic;
+	font-size: 1.1rem;
+	color: var(--ink);
+}
+
+.bestiary {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.4rem;
+	margin-top: clamp(2rem, 5vw, 2.75rem);
+	border-top: 1px solid var(--rule);
+	padding-top: 1.2rem;
+}
+
+.plate {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.plate img {
+	height: 3.6rem;
+	width: auto;
+}
+
+.plate figcaption {
+	color: var(--ink-faint);
+	font-size: 0.6rem;
+	letter-spacing: 0.16em;
 }
 
 /* ============================================================================
@@ -1013,94 +1081,173 @@ main {
 	padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) clamp(3rem, 8vw, 6rem);
 	background: linear-gradient(
 		180deg,
-		rgba(58, 42, 27, 0) 0,
-		rgba(58, 42, 27, 0.4) 7rem,
-		rgba(58, 42, 27, 0.88) 13rem,
-		rgba(58, 42, 27, 0.88) 100%
+		rgba(232, 220, 196, 0) 0,
+		rgba(232, 220, 196, 0.5) 7rem,
+		rgba(232, 220, 196, 0.9) 13rem,
+		rgba(232, 220, 196, 0.9) 100%
 	);
 }
 
-.langs {
-	list-style: none;
+.tree {
+	position: relative;
 	margin: clamp(2rem, 5vw, 3rem) 0 0;
-	padding: 0;
-	border-top: 1px solid var(--rule);
+	padding-left: 1.15rem;
 }
 
-.lang {
-	display: grid;
-	grid-template-columns: 3rem 8rem minmax(0, 1fr) 5rem;
-	align-items: center;
-	gap: 1rem;
-	padding: 1rem 0;
-	border-bottom: 1px solid color-mix(in oklab, var(--rule) 45%, transparent);
+.trunk {
+	position: absolute;
+	left: 0;
+	top: 0.2rem;
+	bottom: 0.2rem;
+	border-left: 1px solid var(--rule-strong);
+}
+
+/* Two roots flaring at the base of the trunk. */
+.trunk::before,
+.trunk::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 0.9rem;
+	border-top: 1px solid var(--rule-strong);
+	transform-origin: left center;
+}
+
+.trunk::before {
+	transform: rotate(34deg);
+}
+
+.trunk::after {
+	transform: rotate(-34deg);
+}
+
+.branches {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.branch {
+	padding: 0 0 1.5rem;
+}
+
+.branch-head {
+	display: flex;
+	align-items: baseline;
+	gap: 0.9rem;
+	padding-bottom: 0.15rem;
 }
 
 .lang-code {
 	font-family: var(--mono);
-	font-size: 0.95rem;
+	font-size: 0.9rem;
 	letter-spacing: 0.1em;
-	color: var(--ink);
+	color: var(--pigment);
 }
 
 .lang-code.assumed {
-	text-decoration: underline dotted var(--rule-strong);
+	text-decoration: underline dotted color-mix(in oklab, var(--pigment) 55%, transparent);
 	text-underline-offset: 4px;
 }
 
 .lang-name {
 	font-family: var(--serif);
 	font-size: 1rem;
-	color: var(--ink-dim);
+	color: var(--ink);
 }
 
-.ladder {
-	display: grid;
-	grid-template-columns: repeat(6, minmax(0, 1fr));
-	gap: 4px;
+.lang-move {
+	margin-left: auto;
+	font-family: var(--mono);
+	font-size: 0.65rem;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+	color: var(--ink-faint);
+	font-variant-numeric: tabular-nums;
+}
+
+.lang-move .arrow {
+	padding: 0 0.3rem;
+	color: var(--pigment);
+}
+
+.branch-plot {
+	position: relative;
+	height: 3.1rem;
+}
+
+.branch-line {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	fill: none;
+	stroke: color-mix(in oklab, var(--pigment) 45%, transparent);
+	stroke-width: 1;
+	vector-effect: non-scaling-stroke;
+}
+
+.leaves {
+	position: absolute;
+	inset: 0;
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
-.ladder li {
-	border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
-	padding: 0.42rem 0;
-	text-align: center;
+/* A leaf is a lens: two pointed corners, tilted with the branch. The code
+   inside is rotated back upright. */
+.leaf {
+	position: absolute;
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.15rem;
+	border: 1px solid color-mix(in oklab, var(--pigment) 30%, transparent);
+	border-radius: 0 100% 0 100%;
+	background: color-mix(in oklab, var(--paper-light) 70%, transparent);
+	color: color-mix(in oklab, var(--ink-faint) 55%, transparent);
 	font-family: var(--mono);
-	font-size: 0.6rem;
-	letter-spacing: 0.04em;
-	color: color-mix(in oklab, var(--ink-faint) 45%, transparent);
+	font-size: 0.52rem;
+	line-height: 1;
+	letter-spacing: 0.02em;
+	transform: translate(-50%, -50%) rotate(-12deg);
 }
 
-.ladder li.held {
-	border-color: color-mix(in oklab, var(--rule-strong) 70%, transparent);
-	background: color-mix(in oklab, var(--ink) 9%, transparent);
-	color: var(--ink);
+.leaf.held {
+	border-color: color-mix(in oklab, var(--pigment) 70%, transparent);
+	background: color-mix(in oklab, var(--pigment) 30%, var(--paper));
+	color: color-mix(in oklab, var(--pigment) 82%, var(--ink));
 }
 
-.ladder li.gap {
+.leaf.gap {
 	border-style: dashed;
-	border-color: color-mix(in oklab, var(--rule) 55%, transparent);
-	color: var(--ink-faint);
+	border-color: color-mix(in oklab, var(--pigment) 45%, transparent);
+	background: transparent;
+	color: color-mix(in oklab, var(--ink-faint) 70%, transparent);
 }
 
-.ladder li.aim {
-	border-color: color-mix(in oklab, var(--accent) 75%, transparent);
-	color: var(--accent);
+.leaf.aim {
+	border-color: var(--pigment);
+	background: var(--pigment);
+	color: var(--paper-light);
+	font-weight: 700;
 }
 
-.lang-move {
-	font-family: var(--mono);
-	font-size: 0.65rem;
-	text-align: right;
-	white-space: nowrap;
-	color: var(--ink-faint);
-	font-variant-numeric: tabular-nums;
-}
-.lang-move .arrow {
-	padding: 0 0.3rem;
-	color: var(--accent);
+@media (max-width: 34rem) {
+	.leaf {
+		width: 1.45rem;
+		height: 0.95rem;
+		font-size: 0.46rem;
+	}
+	.branch-plot {
+		height: 2.7rem;
+	}
+	.lang-name {
+		font-size: 0.9rem;
+	}
 }
 
 @media (max-width: 34rem) {
@@ -1120,34 +1267,22 @@ main {
 	.weeks .h-runs {
 		display: none;
 	}
-	.almanac-row {
-		grid-template-columns: 3.75rem 4.75rem repeat(3, minmax(0, 1fr));
+	.almanac-head {
+		grid-template-columns: 4.4rem minmax(0, 1fr) 3rem 3rem 3.2rem;
 		gap: 0.4rem;
 	}
+	.place {
+		grid-template-columns: 4.4rem minmax(0, 1fr) 3rem 3rem 3.2rem;
+		gap: 0.4rem;
+	}
+	.place-strip {
+		height: 2.4rem;
+	}
 	.almanac-num {
-		font-size: 0.66rem;
-		letter-spacing: 0.02em;
+		font-size: 0.68rem;
+		letter-spacing: 0.01em;
 	}
-	.place-mark {
-		width: 3.75rem;
-		height: 1.7rem;
-	}
-	.lang {
-		grid-template-columns: 2.5rem 1fr auto;
-		grid-template-areas:
-			'code name move'
-			'ladder ladder ladder';
-	}
-	.lang-code {
-		grid-area: code;
-	}
-	.lang-name {
-		grid-area: name;
-	}
-	.lang-move {
-		grid-area: move;
-	}
-	.ladder {
-		grid-area: ladder;
+	.plate img {
+		height: 2.8rem;
 	}
 }
