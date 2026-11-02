@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { asset } from '$app/paths';
 	import { onMount } from 'svelte';
 	import InkStack from '#lib/components/InkStack.svelte';
 	import Segmented from '#lib/components/Segmented.svelte';
@@ -671,12 +672,17 @@
 			/>
 		</aside>
 	</div>
+	<img
+		class="margin-plate margin-plate--horse"
+		src={asset('animals/horse.webp' as 'animals/deer.webp')}
+		alt=""
+		aria-hidden="true"
+		loading="lazy"
+	/>
 </main>
 
 <style>
 	.studio {
-		max-width: 72rem;
-		margin: 0 auto;
 		padding: clamp(2rem, 5vw, 3rem) var(--gutter) clamp(3rem, 8vw, 5rem);
 	}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { asset } from '$app/paths';
 	import { CEFR, index as rung, languages } from '#lib/languages';
 
 	/* One cubic for every branch: M0 26 C200 26 400 7 600 7 in a 600×34 box.
@@ -74,4 +75,11 @@
 			{/each}
 		</ol>
 	</div>
+	<img
+		class="margin-plate margin-plate--falcon"
+		src={asset('animals/falcon.webp' as 'animals/deer.webp')}
+		alt=""
+		aria-hidden="true"
+		loading="lazy"
+	/>
 </main>

@@ -68,7 +68,7 @@ tab. There is no submit endpoint to post to.
 The field is a textarea that grows to its content (up to `42dvh`, then it
 scrolls), because prompts run to several lines. Enter submits, Shift+Enter starts
 a new line. `grow()` measures again after `document.fonts.ready`, since the
-fallback serif and Fraunces do not share metrics and the empty field would
+fallback serif and EB Garamond do not share metrics and the empty field would
 otherwise be a line short.
 
 ### YouTube
@@ -128,16 +128,25 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   `asset('/photos/…')`.
 - `/` focuses the google field.
 - The sheet is cream (`--paper` `#e8dcc4`) and the ink is sepia-black. The
-  background photograph is a fixed layer at `mix-blend-mode: multiply` over the
-  paper; `.paper::before` is the photograph (opacity 0.4, brightness 1.42) and
-  `.paper::after` is a vertical cream wash that protects the top and bottom of
-  the page. `main` carries `z-index: 5` so content paints above it.
+  photograph in `static/background.webp` is painted raw: `.paper` shows it at the
+  body edges with no blend, filter or veil, and `.sheet` is the cream page on top,
+  capped at 64rem. The picture reads as the table the sheet is lying on.
 - Page sheets that need their own ground (the running table, the language tree)
-  fade in with a `linear-gradient` from transparent to 90% `--paper`, so their
-  small print does not land on leaf highlights.
+  keep the paper colour and centre their content with `padding-inline`, so the
+  cream runs to the sheet's edge.
 - The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
   fills the disc and the crescent, so they read as printed woodcuts rather than
   icons. The moon sits in its own block below the two place rows.
+- Each almanac row is a dithered strip as its own background: a cream label
+  carries the place name, a cream label on the right carries rise, set and
+  daylight, and the sun's height is drawn across the middle as a curve with a
+  dark key line and a dot at the current time.
+- The moon block reads the next full and new moon from Meeus's syzygy series
+  (`sun.ts`), and names the full moon: harvest for the one nearest the autumn
+  equinox, hunter's for the one after it, otherwise the month's farm name.
+- The engraved plates from the vault lie in the sheet's outer margins: deer and
+  swift on the index, hare on running, falcon on languages, horse on dither. They
+  are hidden under 62rem, where there is no margin to spare.
 - The language tree is one `<ol>` of branches; the leaves are placed on the same
   cubic curve as the branch stroke, so every leaf sits on the wood at any width.
 - The almanac and today's session are computed in the browser (`onMount`), not at

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { asset } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { gates, race, totals, weeks } from '#lib/plan';
 	import { days } from '#lib/days';
@@ -327,4 +328,11 @@
 		<a href={vaultLink('Marathon/Training Log.md')}>log</a>
 		<a href={vaultLink('Marathon/Gates.md')}>gates</a>
 	</footer>
+	<img
+		class="margin-plate margin-plate--hare"
+		src={asset('animals/hare.webp' as 'animals/deer.webp')}
+		alt=""
+		aria-hidden="true"
+		loading="lazy"
+	/>
 </main>

@@ -36,8 +36,14 @@ export type SunWindow = {
 	length: number;
 };
 
-/** `null` when the sun never crosses the horizon (not a French problem). */
-export function sunWindow(date: Date, lat: number, lon: number): SunWindow | null {
+type Solar = {
+	declination: number;
+	/** Minutes after midnight UTC of solar noon. */
+	noon: number;
+};
+
+/** Declination and solar noon for the UTC day that holds `date`. */
+function solar(date: Date, lon: number): Solar {
 	const midnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 	const t = (julian(new Date(midnight)) - 2451545) / 36525;
 
@@ -69,7 +75,13 @@ export function sunWindow(date: Date, lat: number, lon: number): SunWindow | nul
 			1.25 * e * e * Math.sin(2 * m * RAD));
 
 	// Minutes after midnight UTC: solar noon, then half a day either side of it.
-	const noon = 720 - 4 * lon - eot;
+	return { declination, noon: 720 - 4 * lon - eot };
+}
+
+/** `null` when the sun never crosses the horizon (not a French problem). */
+export function sunWindow(date: Date, lat: number, lon: number): SunWindow | null {
+	const midnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+	const { declination, noon } = solar(date, lon);
 	const cosHour =
 		Math.cos(ZENITH * RAD) / (Math.cos(lat * RAD) * Math.cos(declination)) -
 		Math.tan(lat * RAD) * Math.tan(declination);
@@ -79,6 +91,38 @@ export function sunWindow(date: Date, lat: number, lon: number): SunWindow | nul
 	const rise = new Date(midnight + (noon - half) * 60_000);
 	const set = new Date(midnight + (noon + half) * 60_000);
 	return { rise, set, length: Math.round((set.valueOf() - rise.valueOf()) / 60_000) };
+}
+
+export type CurvePoint = {
+	/** 0 at sunrise, 1 at sunset. */
+	x: number;
+	/** 0 at the horizon, 1 at the day's peak. */
+	y: number;
+};
+
+/** The sun's height across the day, normalised, for the line on each row. */
+export function sunCurve(date: Date, lat: number, lon: number, steps = 48): CurvePoint[] {
+	const window = sunWindow(date, lat, lon);
+	if (!window) return [];
+
+	const { declination, noon } = solar(date, lon);
+	const from = window.rise.valueOf() / 60_000;
+	const to = window.set.valueOf() / 60_000;
+
+	const points: CurvePoint[] = [];
+	for (let i = 0; i <= steps; i += 1) {
+		const minutes = from + ((to - from) * i) / steps;
+		const hourAngle = (minutes - noon) * 0.25;
+		const altitude =
+			Math.asin(
+				Math.sin(lat * RAD) * Math.sin(declination) +
+					Math.cos(lat * RAD) * Math.cos(declination) * Math.cos(hourAngle * RAD)
+			) * DEG;
+		points.push({ x: i / steps, y: altitude });
+	}
+
+	const peak = Math.max(...points.map((p) => p.y));
+	return points.map((p) => ({ x: p.x, y: Math.max(0, p.y / peak) }));
 }
 
 const clock = new Intl.DateTimeFormat('en-GB', {
@@ -104,7 +148,158 @@ export type Moon = {
 	name: string;
 	/** Lit fraction of the disc, 0–1. */
 	lit: number;
+	nextFull: Date;
+	nextNew: Date;
+	/** The full moon's old name, monthly except for harvest and hunter's. */
+	fullName: string;
 };
+
+/** Meeus, Astronomical Algorithms 49: the instant of the k-th new moon.
+    Half-integer k lands on the full moon. */
+function syzygy(k: number): Date {
+	const t = k / 1236.85;
+	const t2 = t * t;
+	const t3 = t2 * t;
+	const t4 = t3 * t;
+	const e = 1 - 0.002516 * t - 0.0000074 * t2;
+	const m = (2.5534 + 29.1053567 * k - 0.0000014 * t2 - 0.00000011 * t3) * RAD;
+	const mp =
+		(201.5643 + 385.81693528 * k + 0.0107582 * t2 + 0.00001238 * t3 - 0.000000058 * t4) * RAD;
+	const f =
+		(160.7108 + 390.67050284 * k - 0.0016118 * t2 - 0.00000227 * t3 + 0.000000011 * t4) * RAD;
+	const om = (124.7746 - 1.56375588 * k + 0.0020672 * t2 + 0.00000215 * t3) * RAD;
+
+	let jde =
+		2451550.09766 + 29.530588861 * k + 0.00015437 * t2 - 0.00000015 * t3 + 0.00000000073 * t4;
+
+	const sin = Math.sin;
+	if (Number.isInteger(k)) {
+		jde +=
+			-0.4072 * sin(mp) +
+			0.17241 * e * sin(m) +
+			0.01608 * sin(2 * mp) +
+			0.01039 * sin(2 * f) +
+			0.00739 * e * sin(mp - m) -
+			0.00514 * e * sin(mp + m) +
+			0.00208 * e * e * sin(2 * m) -
+			0.00111 * sin(mp - 2 * f) -
+			0.00057 * sin(mp + 2 * f) +
+			0.00056 * e * sin(2 * mp + m) -
+			0.00042 * sin(3 * mp) +
+			0.00042 * e * sin(m + 2 * f) +
+			0.00038 * e * sin(m - 2 * f) -
+			0.00024 * e * sin(2 * mp - m) -
+			0.00017 * sin(om) -
+			0.00007 * sin(mp + 2 * m) +
+			0.00004 * sin(2 * mp - 2 * f) +
+			0.00004 * sin(3 * m) +
+			0.00003 * sin(mp + m - 2 * f) +
+			0.00003 * sin(2 * mp + 2 * f) -
+			0.00003 * sin(mp + m + 2 * f) +
+			0.00003 * sin(mp - m + 2 * f) -
+			0.00002 * sin(mp - m - 2 * f) -
+			0.00002 * sin(3 * mp + m) +
+			0.00002 * sin(4 * mp);
+	} else {
+		jde +=
+			-0.40614 * sin(mp) +
+			0.17302 * e * sin(m) +
+			0.01614 * sin(2 * mp) +
+			0.01043 * sin(2 * f) +
+			0.00734 * e * sin(mp - m) -
+			0.00515 * e * sin(mp + m) +
+			0.00209 * e * e * sin(2 * m) -
+			0.00111 * sin(mp - 2 * f) -
+			0.00057 * sin(mp + 2 * f) +
+			0.00056 * e * sin(2 * mp + m) -
+			0.00042 * sin(3 * mp) +
+			0.00042 * e * sin(m + 2 * f) +
+			0.00038 * e * sin(m - 2 * f) -
+			0.00024 * e * sin(2 * mp - m) -
+			0.00017 * sin(om) -
+			0.00007 * sin(mp + 2 * m) +
+			0.00004 * sin(2 * mp - 2 * f) +
+			0.00004 * sin(3 * m) +
+			0.00003 * sin(mp + m - 2 * f) +
+			0.00003 * sin(2 * mp + 2 * f) -
+			0.00003 * sin(mp + m + 2 * f) +
+			0.00003 * sin(mp - m + 2 * f) -
+			0.00002 * sin(mp - m - 2 * f) -
+			0.00002 * sin(3 * mp + m);
+	}
+
+	return new Date((jde - J1970) * DAY_MS);
+}
+
+const meanPhase = (date: Date): number => (julian(date) - 2451550.09766) / SYNODIC;
+
+/** The first new moon after `date`. */
+export function nextNewMoon(date: Date): Date {
+	const first = Math.floor(meanPhase(date)) - 1;
+	for (let i = 0; i < 4; i += 1) {
+		const moon = syzygy(first + i);
+		if (moon.valueOf() > date.valueOf()) return moon;
+	}
+	return syzygy(first + 4);
+}
+
+/** The first full moon after `date`. */
+export function nextFullMoon(date: Date): Date {
+	const first = Math.floor(meanPhase(date) - 0.5) - 1;
+	for (let i = 0; i < 4; i += 1) {
+		const moon = syzygy(first + i + 0.5);
+		if (moon.valueOf() > date.valueOf()) return moon;
+	}
+	return syzygy(first + 4.5);
+}
+
+/** Farm names, by month, as printed in the almanacs. */
+const MOON_NAMES = [
+	'wolf moon',
+	'snow moon',
+	'worm moon',
+	'pink moon',
+	'flower moon',
+	'strawberry moon',
+	'buck moon',
+	'sturgeon moon',
+	'corn moon',
+	"hunter's moon",
+	'beaver moon',
+	'cold moon'
+];
+
+const parisPart = (date: Date, options: Intl.DateTimeFormatOptions): string =>
+	new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Paris', ...options }).format(date);
+
+/** The nearest full moon to the autumn equinox is the harvest moon; the one
+    after it is the hunter's. Everything else keeps its month's name. */
+export function fullMoonName(date: Date): string {
+	const year = Number(parisPart(date, { year: 'numeric' }));
+	const equinox = new Date(Date.UTC(year, 8, 22, 12));
+
+	const after = nextFullMoon(new Date(equinox.valueOf() - 1));
+	const before = nextFullMoon(new Date(equinox.valueOf() - 32 * DAY_MS));
+	const nearest =
+		Math.abs(after.valueOf() - equinox.valueOf()) < Math.abs(before.valueOf() - equinox.valueOf())
+			? after
+			: before;
+
+	const gap = date.valueOf() - nearest.valueOf();
+	if (Math.abs(gap) < 2 * DAY_MS) return 'harvest moon';
+	if (gap > 0 && gap < 40 * DAY_MS) return "hunter's moon";
+
+	const month = Number(parisPart(date, { month: 'numeric' })) - 1;
+	return MOON_NAMES[month];
+}
+
+/** `Date` → `26 oct 2026`, in Paris. */
+export function stamp(date: Date): string {
+	const day = Number(parisPart(date, { day: 'numeric' }));
+	const month = parisPart(date, { month: 'short' }).toLowerCase();
+	const year = parisPart(date, { year: 'numeric' });
+	return `${day} ${month} ${year}`;
+}
 
 const PHASES = [
 	'new',
@@ -121,7 +316,14 @@ export function moon(date: Date): Moon {
 	const jd = julian(date);
 	const age = (((jd - 2451550.1) % SYNODIC) + SYNODIC) % SYNODIC;
 	const lit = (1 - Math.cos((2 * Math.PI * age) / SYNODIC)) / 2;
-	return { name: PHASES[Math.floor((age / SYNODIC) * 8) % 8], lit };
+	const nextFull = nextFullMoon(date);
+	return {
+		name: PHASES[Math.floor((age / SYNODIC) * 8) % 8],
+		lit,
+		nextFull,
+		nextNew: nextNewMoon(date),
+		fullName: fullMoonName(nextFull)
+	};
 }
 
 export type Day = {
@@ -129,6 +331,9 @@ export type Day = {
 	rise: string;
 	set: string;
 	length: string;
+	curve: CurvePoint[];
+	/** Where the clock sits on the curve today, or `null` outside daylight. */
+	now: number | null;
 };
 
 /** Everything the index strip needs, for both places and the moon. */
@@ -136,11 +341,16 @@ export function almanac(date: Date): { days: Day[]; moon: Moon } {
 	return {
 		days: places.map((place) => {
 			const window = sunWindow(date, place.lat, place.lon);
+			const now = window
+				? (date.valueOf() - window.rise.valueOf()) / (window.set.valueOf() - window.rise.valueOf())
+				: 0;
 			return {
 				place,
 				rise: window ? hhmm(window.rise) : '—',
 				set: window ? hhmm(window.set) : '—',
-				length: window ? hours(window.length) : '—'
+				length: window ? hours(window.length) : '—',
+				curve: sunCurve(date, place.lat, place.lon),
+				now: window && now >= 0 && now <= 1 ? now : null
 			};
 		}),
 		moon: moon(date)

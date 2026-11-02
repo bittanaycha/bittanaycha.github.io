@@ -28,19 +28,21 @@
 	aria-hidden="true"
 ></div>
 
-<header class="site-header">
-	<div class="bar">
-		<nav class="nav" aria-label="Sections">
-			<a href={resolve('/')} aria-current={here === '/' ? 'page' : undefined}>index</a>
-			<a href={resolve('/dither')} aria-current={here === '/dither' ? 'page' : undefined}>dither</a>
-			<a href={resolve('/running')} aria-current={here === '/running' ? 'page' : undefined}>
-				running
-			</a>
-			<a href={resolve('/languages')} aria-current={here === '/languages' ? 'page' : undefined}>
-				languages
-			</a>
-		</nav>
-	</div>
-</header>
+<div class="sheet">
+	<header class="site-header">
+		<div class="bar">
+			<nav class="nav" aria-label="Sections">
+				<a href={resolve('/')} aria-current={here === '/' ? 'page' : undefined}>index</a>
+				<a href={resolve('/dither')} aria-current={here === '/dither' ? 'page' : undefined}>dither</a>
+				<a href={resolve('/running')} aria-current={here === '/running' ? 'page' : undefined}>
+					running
+				</a>
+				<a href={resolve('/languages')} aria-current={here === '/languages' ? 'page' : undefined}>
+					languages
+				</a>
+			</nav>
+		</div>
+	</header>
 
-{@render children()}
+	{@render children()}
+</div>

@@ -1,15 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { asset } from '$app/paths';
-	import { almanac } from '#lib/sun';
+	import { almanac, stamp } from '#lib/sun';
 	import AlmanacIcon from '#lib/components/AlmanacIcon.svelte';
-
-	const plates = ['deer', 'falcon', 'hare', 'horse', 'swift'] as const;
 
 	const strips = {
 		marseille: asset('strips/marseille.webp'),
 		wigginton: asset('strips/home.webp')
 	} as const;
+
+	/* The sun's height as a line across the row: x spans sunrise to sunset,
+	   y is the altitude against the day's peak, drawn in a 0–100 × 0–30 box. */
+	const sunLine = (curve: { x: number; y: number }[]): string =>
+		curve
+			.map((p, i) => `${i ? 'L' : 'M'}${(p.x * 100).toFixed(2)} ${(30 - p.y * 27).toFixed(2)}`)
+			.join(' ');
+
+	const sunPoint = (x: number, curve: { x: number; y: number }[]): number => {
+		const i = Math.min(curve.length - 1, Math.max(0, Math.round(x * (curve.length - 1))));
+		return 30 - curve[i].y * 27;
+	};
 
 	let google = $state<HTMLInputElement>();
 
@@ -178,27 +188,41 @@
 				<span class="eyebrow">sun</span>
 			</div>
 
-			<div class="almanac-head" aria-hidden="true">
-				<span class="eyebrow">place</span>
-				<span></span>
-				<span class="eyebrow">rise</span>
-				<span class="eyebrow">set</span>
-				<span class="eyebrow">day</span>
-			</div>
-
 			{#each almanacData.days as day (day.place.id)}
-				<div class="place">
+				<div
+					class="place"
+					style:--strip={`url('${strips[day.place.id as keyof typeof strips]}')`}
+				>
 					<span class="place-name">{day.place.name}</span>
-					<img
-						class="place-strip"
-						src={strips[day.place.id as keyof typeof strips]}
-						alt=""
-						aria-hidden="true"
-						loading="lazy"
-					/>
-					<span class="almanac-num">{day.rise}</span>
-					<span class="almanac-num">{day.set}</span>
-					<span class="almanac-num">{day.length}</span>
+
+					<svg class="sun-path" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+						<path class="sun-path-key" d={sunLine(day.curve)} />
+						<path class="sun-path-line" d={sunLine(day.curve)} />
+						<line class="sun-path-ground" x1="0" y1="29.5" x2="100" y2="29.5" />
+						{#if day.now !== null}
+							<circle
+								class="sun-path-now"
+								cx={day.now * 100}
+								cy={sunPoint(day.now, day.curve)}
+								r="1.6"
+							/>
+						{/if}
+					</svg>
+
+					<span class="place-times">
+						<span class="place-time">
+							<span class="eyebrow">rise</span>
+							<span class="almanac-num">{day.rise}</span>
+						</span>
+						<span class="place-time">
+							<span class="eyebrow">set</span>
+							<span class="almanac-num">{day.set}</span>
+						</span>
+						<span class="place-time">
+							<span class="eyebrow">day</span>
+							<span class="almanac-num">{day.length}</span>
+						</span>
+					</span>
 				</div>
 			{/each}
 
@@ -211,20 +235,30 @@
 				<span class="moon-phase">{almanacData.moon.name}</span>
 				<span class="almanac-num">{Math.round(almanacData.moon.lit * 100)}%</span>
 			</div>
+
+			<dl class="moon-next">
+				<dt>full</dt>
+				<dd>{stamp(almanacData.moon.nextFull)}</dd>
+				<dd class="moon-name">{almanacData.moon.fullName}</dd>
+				<dt>new</dt>
+				<dd>{stamp(almanacData.moon.nextNew)}</dd>
+			</dl>
 		</section>
 
-		<section class="bestiary" aria-label="Plates">
-			{#each plates as plate (plate)}
-				<figure class="plate">
-					<img
-						src={asset(`animals/${plate}.webp` as 'animals/deer.webp')}
-						alt=""
-						aria-hidden="true"
-						loading="lazy"
-					/>
-					<figcaption class="eyebrow">{plate}</figcaption>
-				</figure>
-			{/each}
-		</section>
 	{/if}
+
+	<img
+		class="margin-plate margin-plate--deer"
+		src={asset('animals/deer.webp' as 'animals/deer.webp')}
+		alt=""
+		aria-hidden="true"
+		loading="lazy"
+	/>
+	<img
+		class="margin-plate margin-plate--swift"
+		src={asset('animals/swift.webp' as 'animals/deer.webp')}
+		alt=""
+		aria-hidden="true"
+		loading="lazy"
+	/>
 </main>
