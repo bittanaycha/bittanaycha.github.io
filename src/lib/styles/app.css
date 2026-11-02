@@ -269,8 +269,11 @@ main {
 	align-items: center;
 	gap: 0.45rem;
 	padding: 0.6rem 0.7rem;
-	/* Full bleed: the crop keeps the sun above the label, so the word sits on
-	   the dark field and keeps the contrast of a card. */
+	/* Full bleed. The plate is a bright midday field, so the label takes the
+	   paper's ink instead of the card's cream. */
+	--ink: var(--paper-ink);
+	--ink-dim: var(--paper-ink-dim);
+	--ink-faint: #6d5539;
 	background-image: var(--plate);
 	background-size: cover;
 	background-position: 50% 62%;
