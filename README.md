@@ -2,9 +2,9 @@
 
 A personal homepage, a marathon training page and a dithering studio. SvelteKit,
 fully prerendered, served as static files from GitHub Pages at
-<https://bittanaycha.github.io>. The homepage is a dark sea with the day's
-almanac floating on it as separate islands; a pixel ship sails to whichever
-island the pointer is over.
+<https://bittanaycha.github.io>. The page is printed on a photograph of leaves,
+with the day's almanac laid on it as separate blue cards; a pixel ship sails to
+whichever card the pointer is over.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
 `dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
@@ -24,8 +24,8 @@ npm run sync       # regenerate the day table and run log from the vault
 
 | File | What it controls |
 | --- | --- |
-| `src/lib/styles/app.css` | The whole design system: sea, island, ink and ultramarine tokens, type, grid, wake |
-| `static/background.webp` | The leaf photograph, held down to a dark ground behind the islands |
+| `src/lib/styles/app.css` | The whole design system: paper, card, ink and accent tokens, type, grid, wake |
+| `static/background.webp` | The leaf photograph: the paper the whole page is printed on |
 | `static/strips/` | The dithered coast and forest strips in the almanac |
 | `static/animals/` | The five engraved plates (deer, falcon, hare, horse, swift) |
 | `src/routes/+layout.svelte` | The sea layer, the deck, the nav, page titles, icons, the ship |
@@ -128,12 +128,14 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
-- The sea is `#04060d`; the photograph in `static/background.webp` is painted on
-  it behind the islands, filtered down to a dark ground, and the chart dots and
-  ultramarine wash sit on top. Ink is `#f1f4ff`, the interactive colour
-  `#3452ff`.
-- Islands are the only surfaces: `#0a1020` with a 1px rule, registration ticks
-  just outside each corner, and an ultramarine glow on hover.
+- The paper is the photograph in `static/background.webp`, unfiltered, under a
+  `rgb(245 237 222 / 0.5)` wash. Ink on paper is `#2c1d10`.
+- Cards are the only surfaces: a `#3d75bb` wash with a `feTurbulence` grain
+  blended into it, uneven rounded corners, a soft brown drop shadow and
+  registration ticks just outside each corner. Their ink is cream (`#f7f2e6`);
+  the accent inside a card is yellow `#f4c95d` and red `#d9432f`.
+- Labels are sentence case ("Moon", not "MOON"). `.eyebrow.plain` opts out for
+  numbers and units ("26 weeks", "mm:ss or h:mm:ss").
 - The deck is full width with an asymmetric gutter (narrow left, wide right), so
   the composition leans and the sea stays open on the right. Both pages place
   every island on a 12-column chart with explicit column and row numbers rather
@@ -145,14 +147,17 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
 - The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
   fills the disc and the crescent, so they read as printed woodcuts rather than
   icons. The moon sits in its own island below the two place strips.
-- Each place is an island whose background is its dithered photograph: the name
-  sits top-left, rise/set/day bottom-right.
+- Each place is a card holding its dithered photograph as a real `<img>`
+  (`object-fit: cover`): the name sits top-left, rise/set/day bottom-right. The
+  CSS `background: … cover` version failed to paint the home strip on Pages, so
+  the picture is an element.
 - The moon island reads the next full and new moon from Meeus's syzygy series
   (`sun.ts`), and names the full moon: harvest for the one nearest the autumn
   equinox, hunter's for the one after it, otherwise the month's farm name.
 - The engraved plates from the vault lie in the page margins, fixed to the
-  viewport: deer and swift on the index, hare on running, horse on dither. They
-  are hidden under 62rem, where there is no margin to spare.
+  viewport: deer and swift on the index, hare on running, horse on dither. The
+  falcon is unused. They are hidden under 62rem, where there is no margin to
+  spare.
 - The almanac and today's session are computed in the browser (`onMount`), not at
   build time: a prerendered page would freeze the day it was built.
 - No runtime dependencies, no server, no remote fonts or assets.
