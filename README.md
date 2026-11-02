@@ -21,7 +21,7 @@ npm run check      # type + a11y diagnostics
 | File | What it controls |
 | --- | --- |
 | `src/lib/styles/app.css` | The whole design system: kraft/ink tokens, type, grain, layout |
-| `static/background.webp` | The leaf photograph, blurred and veiled behind every page |
+| `static/background.webp` | The leaf photograph, printed behind every page |
 | `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
 | `src/routes/+page.svelte` | Homepage — google, wikipedia and deepseek fields, a YouTube button |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
@@ -53,6 +53,12 @@ The third field posts to `https://chat.deepseek.com/?q=…`. DeepSeek reads `q` 
 `prompt`) from the URL, stashes it in `sessionStorage` and drops it into the chat
 box once signed in, so the field hands the prompt over and opens the chat in a new
 tab. There is no submit endpoint to post to.
+
+The field is a textarea that grows to its content (up to `42dvh`, then it
+scrolls), because prompts run to several lines. Enter submits, Shift+Enter starts
+a new line. `grow()` measures again after `document.fonts.ready`, since the
+fallback serif and Fraunces do not share metrics and the empty field would
+otherwise be a line short.
 
 ### YouTube
 
@@ -101,6 +107,12 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
-- The background photograph is a fixed, blurred, veiled layer; `main` carries
+- The background photograph is a fixed layer, multiplied into the paper tone
+  (`#7a6550` at `mix-blend-mode: multiply`) rather than blurred and veiled: the
+  leaves stay sharp, and an alpha veil would have greyed them out. `main` carries
   `z-index: 5` so page content paints above it.
+- Because the picture is prominent, hairlines and small print are pitched for it:
+  `--rule` is `#a68d6c`, `--ink-faint` is `#b1a189`, and the running page prints
+  its table on a gradient sheet (`linear-gradient` to 88% `--paper-deep`) so the
+  12px numbers do not land on leaf highlights.
 - No runtime dependencies, no server, no remote fonts or assets.

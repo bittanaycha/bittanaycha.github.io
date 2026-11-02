@@ -1,18 +1,50 @@
 <script lang="ts">
 	let google = $state<HTMLInputElement>();
 
+	let prompt = $state('');
+	let promptForm = $state<HTMLFormElement>();
+	let promptField = $state<HTMLTextAreaElement>();
+
+	// Prompts run to several lines. The field grows to the height of its own
+	// content, up to the max-height in the stylesheet, where it scrolls instead.
+	function grow() {
+		if (!promptField) return;
+		promptField.style.height = 'auto';
+		promptField.style.height = `${promptField.scrollHeight}px`;
+	}
+
+	$effect(() => {
+		prompt;
+		grow();
+	});
+
+	// The serif loads after the first paint and its metrics are not the
+	// fallback's, so measure again once it is in.
+	$effect(() => {
+		document.fonts?.ready.then(grow);
+	});
+
+	// Enter hands the prompt over, Shift+Enter starts a new line, the same
+	// bargain every chat box makes.
+	function onPromptKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+		event.preventDefault();
+		promptForm?.requestSubmit();
+	}
+
 	// `/` jumps to the first field from anywhere on the page, the way a browser
 	// search bar does. Ignored while something else is already focused.
 	function onKeydown(event: KeyboardEvent) {
 		if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
 		const target = event.target as HTMLElement | null;
-		if (target && (target.tagName === 'INPUT' || target.isContentEditable)) return;
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable))
+			return;
 		event.preventDefault();
 		google?.focus();
 	}
 </script>
 
-<svelte:window on:keydown={onKeydown} />
+<svelte:window on:keydown={onKeydown} onresize={grow} />
 
 <main class="home">
 	<section class="searches" aria-label="Search">
@@ -55,11 +87,12 @@
 
 		<!-- DeepSeek reads `?q=` on load and prefills the chat box with it. -->
 		<form
-			class="search"
+			class="search search--prompt"
 			action="https://chat.deepseek.com/"
 			method="get"
 			target="_blank"
 			rel="noreferrer"
+			bind:this={promptForm}
 		>
 			<label class="whale-label" for="q-deepseek" title="Ask DeepSeek">
 				<svg class="whale" viewBox="0 0 24 24" aria-hidden="true">
@@ -69,13 +102,18 @@
 				</svg>
 				<span class="sr-only">deepseek</span>
 			</label>
-			<input
+			<textarea
 				id="q-deepseek"
 				name="q"
-				type="search"
+				rows="1"
 				autocomplete="off"
 				spellcheck="false"
-			/>
+				aria-describedby="q-deepseek-hint"
+				bind:this={promptField}
+				bind:value={prompt}
+				onkeydown={onPromptKeydown}
+			></textarea>
+			<span class="sr-only" id="q-deepseek-hint">Enter sends, shift and enter starts a new line</span>
 			<button type="submit" aria-label="Ask DeepSeek"><span aria-hidden="true">↵</span></button>
 		</form>
 	</section>

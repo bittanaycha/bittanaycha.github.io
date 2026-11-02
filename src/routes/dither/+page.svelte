@@ -705,7 +705,7 @@
 		max-width: 34rem;
 		margin: 0.35rem 0 0;
 		font-size: 0.95rem;
-		color: var(--ink-dim);
+		color: var(--ink);
 	}
 
 	.bench {
@@ -820,7 +820,7 @@
 		flex-direction: column;
 		gap: 1rem;
 		border: 1px solid var(--rule);
-		background: color-mix(in oklab, var(--paper-deep) 55%, transparent);
+		background: color-mix(in oklab, var(--paper-deep) 92%, transparent);
 		padding: 1.25rem;
 	}
 
