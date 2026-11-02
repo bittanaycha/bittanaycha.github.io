@@ -116,7 +116,7 @@
 <main class="run">
 	<h1 class="sr-only">running</h1>
 
-	<header class="run-head">
+	<header class="run-head island">
 		<div>
 			<p class="run-date">{dotted(race.date)}</p>
 			<p class="eyebrow">
@@ -130,7 +130,7 @@
 	</header>
 
 	{#if todayDay && todayWeek}
-		<section class="today" aria-label="Today">
+		<section class="today island" aria-label="Today">
 			<div>
 				<p class="eyebrow">
 					{shortDate(todayDay.date)} · week {two(todayWeek.week)} · {todayWeek.phase}
@@ -142,6 +142,7 @@
 		</section>
 	{/if}
 
+	<section class="island tabbed">
 	<div class="tabs" role="tablist" aria-label="Running" tabindex="-1" onkeydown={onTabKey}>
 		{#each tabs as entry (entry.id)}
 			<button
@@ -317,7 +318,9 @@
 		</div>
 	</div>
 
-	<footer class="run-links">
+	</section>
+
+	<footer class="run-links island">
 		<span class="eyebrow">obsidian</span>
 		<a href={vaultLink('Marathon/Marathon Index.md')}>plan</a>
 		{#if todayWeek}

@@ -1,8 +1,10 @@
 # homepage
 
-A personal homepage, a marathon training page and a language tree. SvelteKit,
+A personal homepage, a marathon training page and a dithering studio. SvelteKit,
 fully prerendered, served as static files from GitHub Pages at
-<https://bittanaycha.github.io>.
+<https://bittanaycha.github.io>. The homepage is a dark sea with the day's
+almanac floating on it as separate islands; a pixel ship sails to whichever
+island the pointer is over.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
 `dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
@@ -22,13 +24,13 @@ npm run sync       # regenerate the day table and run log from the vault
 
 | File | What it controls |
 | --- | --- |
-| `src/lib/styles/app.css` | The whole design system: cream/sepia tokens, type, grain, layout |
-| `static/background.webp` | The leaf photograph, multiplied into the paper behind every page |
+| `src/lib/styles/app.css` | The whole design system: sea, island, ink and ultramarine tokens, type, grid, wake |
+| `static/background.webp` | The leaf photograph, held down to a dark ground behind the islands |
 | `static/strips/` | The dithered coast and forest strips in the almanac |
 | `static/animals/` | The five engraved plates (deer, falcon, hare, horse, swift) |
-| `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
+| `src/routes/+layout.svelte` | The sea layer, the deck, the nav, page titles, icons, the ship |
+| `src/lib/components/Ship.svelte` | The pixel sailboat: docking, tacking, wake |
 | `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
-| `src/routes/languages/+page.svelte` | Languages — one branch per language, A1 to C2 as leaves |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
@@ -36,14 +38,13 @@ npm run sync       # regenerate the day table and run log from the vault
 | `src/lib/log.ts` | Every run in the training log. Generated — see below |
 | `src/lib/sun.ts` | NOAA sunrise/sunset and the moon phase behind the almanac |
 | `src/lib/pace.ts` | VDOT, threshold pace and rep ranges |
-| `src/lib/languages.ts` | The six languages, current level to target |
 | `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts` and `log.ts` |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
 | `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
-| `src/lib/components/` | `Slider`, `Segmented`, `InkStack` (studio controls), `AlmanacIcon` (sun and moon) |
+| `src/lib/components/` | `Slider`, `Segmented`, `InkStack` (studio controls), `AlmanacIcon` (sun and moon), `Ship` |
 | `src/lib/decode.ts` | File/paste decoding for dropped images |
-| `static/fonts/` | EB Garamond (variable, roman and italic) and Courier Prime, self-hosted |
+| `static/fonts/` | Geist Mono (variable 100–900), self-hosted |
 
 ### The dither studio
 
@@ -68,7 +69,7 @@ tab. There is no submit endpoint to post to.
 The field is a textarea that grows to its content (up to `42dvh`, then it
 scrolls), because prompts run to several lines. Enter submits, Shift+Enter starts
 a new line. `grow()` measures again after `document.fonts.ready`, since the
-fallback serif and EB Garamond do not share metrics and the empty field would
+fallback face and Geist Mono do not share metrics and the empty field would
 otherwise be a line short.
 
 ### YouTube
@@ -127,28 +128,31 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
-- The sheet is cream (`--paper` `#e8dcc4`) and the ink is sepia-black. The
-  photograph in `static/background.webp` is painted raw: `.paper` shows it at the
-  body edges with no blend, filter or veil, and `.sheet` is the cream page on top,
-  capped at 64rem. The picture reads as the table the sheet is lying on.
-- Page sheets that need their own ground (the running table, the language tree)
-  keep the paper colour and centre their content with `padding-inline`, so the
-  cream runs to the sheet's edge.
+- The sea is `#04060d`; the photograph in `static/background.webp` is painted on
+  it behind the islands, filtered down to a dark ground, and the chart dots and
+  ultramarine wash sit on top. Ink is `#f1f4ff`, the interactive colour
+  `#3452ff`.
+- Islands are the only surfaces: `#0a1020` with a 1px rule, registration ticks
+  just outside each corner, and an ultramarine glow on hover.
+- The deck is full width with an asymmetric gutter (narrow left, wide right), so
+  the composition leans and the sea stays open on the right. Both pages place
+  every island on a 12-column chart with explicit column and row numbers rather
+  than stacking them.
+- `Ship.svelte` docks at the top-right of whichever island the pointer is over,
+  gliding in 900 ms, then tacks a few pixels against the current while it is
+  moored and drops fading pixels of wake behind it. `prefers-reduced-motion`
+  drops the glide, the tack and the bob.
 - The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
   fills the disc and the crescent, so they read as printed woodcuts rather than
-  icons. The moon sits in its own block below the two place rows.
-- Each almanac row is a dithered strip as its own background: a cream label
-  carries the place name, a cream label on the right carries rise, set and
-  daylight, and the sun's height is drawn across the middle as a curve with a
-  dark key line and a dot at the current time.
-- The moon block reads the next full and new moon from Meeus's syzygy series
+  icons. The moon sits in its own island below the two place strips.
+- Each place is an island whose background is its dithered photograph: the name
+  sits top-left, rise/set/day bottom-right.
+- The moon island reads the next full and new moon from Meeus's syzygy series
   (`sun.ts`), and names the full moon: harvest for the one nearest the autumn
   equinox, hunter's for the one after it, otherwise the month's farm name.
-- The engraved plates from the vault lie in the sheet's outer margins: deer and
-  swift on the index, hare on running, falcon on languages, horse on dither. They
+- The engraved plates from the vault lie in the page margins, fixed to the
+  viewport: deer and swift on the index, hare on running, horse on dither. They
   are hidden under 62rem, where there is no margin to spare.
-- The language tree is one `<ol>` of branches; the leaves are placed on the same
-  cubic curve as the branch stroke, so every leaf sits on the wood at any width.
 - The almanac and today's session are computed in the browser (`onMount`), not at
   build time: a prerendered page would freeze the day it was built.
 - No runtime dependencies, no server, no remote fonts or assets.

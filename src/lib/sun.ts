@@ -93,38 +93,6 @@ export function sunWindow(date: Date, lat: number, lon: number): SunWindow | nul
 	return { rise, set, length: Math.round((set.valueOf() - rise.valueOf()) / 60_000) };
 }
 
-export type CurvePoint = {
-	/** 0 at sunrise, 1 at sunset. */
-	x: number;
-	/** 0 at the horizon, 1 at the day's peak. */
-	y: number;
-};
-
-/** The sun's height across the day, normalised, for the line on each row. */
-export function sunCurve(date: Date, lat: number, lon: number, steps = 48): CurvePoint[] {
-	const window = sunWindow(date, lat, lon);
-	if (!window) return [];
-
-	const { declination, noon } = solar(date, lon);
-	const from = window.rise.valueOf() / 60_000;
-	const to = window.set.valueOf() / 60_000;
-
-	const points: CurvePoint[] = [];
-	for (let i = 0; i <= steps; i += 1) {
-		const minutes = from + ((to - from) * i) / steps;
-		const hourAngle = (minutes - noon) * 0.25;
-		const altitude =
-			Math.asin(
-				Math.sin(lat * RAD) * Math.sin(declination) +
-					Math.cos(lat * RAD) * Math.cos(declination) * Math.cos(hourAngle * RAD)
-			) * DEG;
-		points.push({ x: i / steps, y: altitude });
-	}
-
-	const peak = Math.max(...points.map((p) => p.y));
-	return points.map((p) => ({ x: p.x, y: Math.max(0, p.y / peak) }));
-}
-
 const clock = new Intl.DateTimeFormat('en-GB', {
 	timeZone: 'Europe/Paris',
 	hour: '2-digit',
@@ -331,9 +299,6 @@ export type Day = {
 	rise: string;
 	set: string;
 	length: string;
-	curve: CurvePoint[];
-	/** Where the clock sits on the curve today, or `null` outside daylight. */
-	now: number | null;
 };
 
 /** Everything the index strip needs, for both places and the moon. */
@@ -341,16 +306,11 @@ export function almanac(date: Date): { days: Day[]; moon: Moon } {
 	return {
 		days: places.map((place) => {
 			const window = sunWindow(date, place.lat, place.lon);
-			const now = window
-				? (date.valueOf() - window.rise.valueOf()) / (window.set.valueOf() - window.rise.valueOf())
-				: 0;
 			return {
 				place,
 				rise: window ? hhmm(window.rise) : '—',
 				set: window ? hhmm(window.set) : '—',
-				length: window ? hours(window.length) : '—',
-				curve: sunCurve(date, place.lat, place.lon),
-				now: window && now >= 0 && now <= 1 ? now : null
+				length: window ? hours(window.length) : '—'
 			};
 		}),
 		moon: moon(date)

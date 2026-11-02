@@ -455,7 +455,7 @@
 </svelte:head>
 
 <main class="studio">
-	<header class="studio-head">
+	<header class="studio-head island">
 		<span class="eyebrow">studio</span>
 		<h1>Dither</h1>
 		<p class="blurb">
@@ -465,7 +465,7 @@
 	</header>
 
 	<div class="bench">
-		<div class="stage-col">
+		<div class="stage-col island">
 			<div
 				class="stage"
 				class:stage--drop={dragging}
@@ -531,7 +531,7 @@
 			<p class="hint eyebrow">drop or paste an image</p>
 		</div>
 
-		<aside class="panel">
+		<aside class="panel island">
 			<Segmented label="Screen" bind:value={mode} options={screenModes} columns={2} />
 
 			<Slider
@@ -683,7 +683,10 @@
 
 <style>
 	.studio {
-		padding: clamp(2rem, 5vw, 3rem) var(--gutter) clamp(3rem, 8vw, 5rem);
+		display: flex;
+		flex-direction: column;
+		gap: clamp(0.9rem, 2vw, 1.4rem);
+		padding-top: clamp(1.2rem, 4vh, 2.5rem);
 	}
 
 	.studio-head {
@@ -691,9 +694,7 @@
 		grid-template-columns: auto 1fr;
 		align-items: baseline;
 		column-gap: 1rem;
-		margin-bottom: 1.75rem;
-		padding-bottom: 1.25rem;
-		border-bottom: 1px solid var(--rule);
+		padding: clamp(1.1rem, 2.4vw, 1.7rem);
 	}
 
 	.studio-head h1 {
@@ -716,7 +717,12 @@
 
 	.bench {
 		display: grid;
-		gap: 1.5rem;
+		gap: clamp(0.9rem, 2vw, 1.4rem);
+	}
+
+	.stage-col,
+	.panel {
+		padding: clamp(0.9rem, 2vw, 1.4rem);
 	}
 
 	@media (min-width: 60rem) {

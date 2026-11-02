@@ -1,55 +1,42 @@
 /* ============================================================================
-   Type — Garamond for the page, Courier for figures.
-   EB Garamond is an old-style face: small x-height, sloped shoulders, the
-   look of a printed book rather than a screen. Courier Prime keeps the
-   tables' numbers in step.
+   Type — Geist Mono everywhere. One face, one voice.
    ========================================================================= */
 @font-face {
-	font-family: 'EB Garamond';
-	src: url('/fonts/eb-garamond.woff2') format('woff2');
-	font-weight: 400 800;
-	font-style: normal;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'EB Garamond';
-	src: url('/fonts/eb-garamond-italic.woff2') format('woff2');
-	font-weight: 400 800;
-	font-style: italic;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'Courier Prime';
-	src: url('/fonts/courier-prime.woff2') format('woff2');
-	font-weight: 400;
+	font-family: 'Geist Mono';
+	src: url('/fonts/geist-mono.woff2') format('woff2');
+	font-weight: 100 900;
 	font-style: normal;
 	font-display: swap;
 }
 
 /* ============================================================================
-   Tokens — a cream sheet, sepia ink, a teal rule.
-   The photograph is printed into the sheet, not laid over it, so the ink has
-   to stay darker than the leaves. Every value here is a print value.
+   Tokens — a dark sea, floating islands, white ink and ultramarine.
    ========================================================================= */
 :root {
-	--paper: #e8dcc4;
-	--paper-deep: #dbccae;
-	--paper-light: #f3ead8;
-	--ink: #2c1f15;
-	--ink-dim: #533d28;
-	--ink-faint: #6d5336;
-	--rule: #a98f6d;
-	--rule-strong: #856a47;
-	--accent: #2f6f7e;
-	--accent-deep: #1f5060;
+	--sea: #04060d;
+	--island: #0a1020;
+	--island-soft: #0c1428;
+	--ink: #f1f4ff;
+	--ink-dim: #aeb8d4;
+	--ink-faint: #6f7b9d;
+	--rule: rgb(110 135 225 / 0.26);
+	--rule-strong: rgb(140 165 255 / 0.55);
+	--accent: #3452ff;
+	--accent-deep: #2338c9;
+	--ice: #cfe0ff;
 
-	--serif: 'EB Garamond', 'Iowan Old Style', Georgia, serif;
-	--mono: 'Courier Prime', ui-monospace, SFMono-Regular, Menlo, monospace;
+	/* The almanac labels still ask for paper; on this page the paper is the island. */
+	--paper: var(--island);
+	--paper-deep: var(--sea);
+	--paper-light: var(--ink);
+
+	--serif: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
 	--gutter: clamp(1.25rem, 5vw, 3.5rem);
 	--measure: 44rem;
 
-	color-scheme: light;
+	color-scheme: dark;
 }
 
 /* ============================================================================
@@ -63,39 +50,49 @@
 
 html {
 	-webkit-text-size-adjust: 100%;
-	background: var(--paper);
+	background: var(--sea);
 }
 
 body {
 	margin: 0;
 	min-height: 100dvh;
-	padding: clamp(0.6rem, 1.4vw, 1.25rem);
 	display: flex;
 	flex-direction: column;
-	background-color: var(--paper);
+	background-color: var(--sea);
 	color: var(--ink-dim);
 	font-family: var(--serif);
 	font-size: 16px;
-	line-height: 1.6;
-	font-optical-sizing: auto;
-	font-variation-settings:
-		'SOFT' 35,
-		'WONK' 0;
+	line-height: 1.55;
 	-webkit-font-smoothing: antialiased;
 }
 
-/* The photograph behind everything: raw, at its own contrast and colour.
-   Content sits on the sheet above it. `--photo` is set in the layout, where
-   `asset()` can add the base path. */
-.paper {
+/* The sea: the leaf photograph, held down to a dark ground, under a field of
+   chart dots and a wash of ultramarine. The islands float on top of it. */
+.sea {
 	position: fixed;
 	inset: 0;
 	z-index: 0;
+	overflow: hidden;
 	pointer-events: none;
-	background-color: var(--paper);
+	background-color: var(--sea);
 	background-image: var(--photo);
 	background-size: cover;
 	background-position: center;
+	filter: brightness(0.42) saturate(0.55) contrast(1.05);
+}
+
+.sea::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		radial-gradient(120% 80% at 50% -10%, rgb(52 82 255 / 0.3), transparent 62%),
+		radial-gradient(circle at 1px 1px, rgb(150 175 255 / 0.14) 1px, transparent 0),
+		linear-gradient(rgb(4 6 13 / 0.55), rgb(4 6 13 / 0.78));
+	background-size:
+		auto,
+		22px 22px,
+		auto;
 }
 
 /* Board grain over the whole surface: the plate, the type and the paper share
@@ -106,7 +103,7 @@ body::after {
 	inset: 0;
 	z-index: 60;
 	pointer-events: none;
-	opacity: 0.16;
+	opacity: 0.07;
 	mix-blend-mode: soft-light;
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
 	background-size: 160px 160px;
@@ -157,7 +154,7 @@ a {
 }
 
 .site-header {
-	border-bottom: 1px solid var(--rule);
+	border-bottom: 0;
 }
 
 .bar {
@@ -165,7 +162,7 @@ a {
 	align-items: baseline;
 	justify-content: flex-end;
 	gap: 1.5rem;
-	padding: 1.1rem var(--gutter);
+	padding: 0.6rem 0 1.4rem;
 }
 
 .bar a {
@@ -195,17 +192,19 @@ main {
 	z-index: 5;
 }
 
-/* The page itself: a cream sheet laid on the photograph, with the raw picture
-   showing as a frame around it. */
-.sheet {
+/* The deck: the islands are placed across the full chart, not stacked in a
+   column. The left gutter is narrow and the right one wide, so the whole page
+   leans and the sea stays open on the right. */
+.deck {
 	position: relative;
 	z-index: 5;
-	width: min(100%, 64rem);
+	width: 100%;
+	max-width: 94rem;
 	margin-inline: auto;
 	flex: 1 0 auto;
 	display: flex;
 	flex-direction: column;
-	background: var(--paper);
+	padding: 1rem clamp(1rem, 10vw, 9rem) 4.5rem clamp(1rem, 4.5vw, 4.5rem);
 }
 
 .site-footer {
@@ -218,18 +217,120 @@ main {
 }
 
 /* ============================================================================
+   Islands — each block of content floats on the sea.
+   ========================================================================= */
+.island {
+	position: relative;
+	background: var(--island);
+	border: 1px solid var(--rule);
+	transition:
+		border-color 0.3s ease,
+		box-shadow 0.3s ease,
+		background-color 0.3s ease;
+}
+
+.island:hover {
+	border-color: var(--rule-strong);
+	box-shadow:
+		0 0 0 1px rgb(52 82 255 / 0.18),
+		0 26px 60px -40px rgb(52 82 255 / 0.9);
+}
+
+/* Registration ticks just outside each island: the chart's own marks. */
+.island::before {
+	content: '';
+	position: absolute;
+	inset: -0.35rem;
+	pointer-events: none;
+	opacity: 0.55;
+	background:
+		linear-gradient(var(--rule-strong), var(--rule-strong)) left top / 0.5rem 1px no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) left top / 1px 0.5rem no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) right top / 0.5rem 1px no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) right top / 1px 0.5rem no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) left bottom / 0.5rem 1px no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) left bottom / 1px 0.5rem no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) right bottom / 0.5rem 1px no-repeat,
+		linear-gradient(var(--rule-strong), var(--rule-strong)) right bottom / 1px 0.5rem no-repeat;
+}
+
+/* Wake pixels the ship drops behind it. */
+.wake {
+	position: fixed;
+	z-index: 4;
+	width: 3px;
+	height: 3px;
+	background: var(--ice);
+	opacity: 0;
+	pointer-events: none;
+	animation: wake 1.3s ease-out forwards;
+}
+
+@keyframes wake {
+	0% {
+		opacity: 0.5;
+		transform: translateY(0) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(6px) scale(0.6);
+	}
+}
+
+/* ============================================================================
    Home
    ========================================================================= */
 .home {
-	padding: clamp(3rem, 9vh, 5.5rem) max(var(--gutter), calc((100% - 44rem) / 2))
-		clamp(3rem, 8vw, 5rem);
-	display: flex;
-	flex-direction: column;
-	gap: clamp(1.75rem, 4vw, 2.75rem);
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	column-gap: clamp(0.7rem, 1.5vw, 1.2rem);
+	row-gap: clamp(1.1rem, 2.4vw, 1.9rem);
+	align-items: start;
+	padding-top: clamp(1.5rem, 6vh, 3.5rem);
 }
 
+/* A scattered archipelago, not a column: wide and narrow, left and right. */
 .searches {
-	border-top: 1px solid var(--rule);
+	grid-column: 1 / span 8;
+	grid-row: 1;
+}
+
+.channels {
+	grid-column: 10 / span 3;
+	grid-row: 1;
+	margin-top: clamp(1.5rem, 7vh, 3.5rem);
+}
+
+.sun-tag {
+	grid-column: 1 / span 2;
+	grid-row: 2;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 0.7rem;
+}
+
+.place--marseille {
+	grid-column: 4 / span 8;
+	grid-row: 2;
+	margin-top: clamp(0.4rem, 2vh, 1.2rem);
+}
+
+.place--wigginton {
+	grid-column: 1 / span 9;
+	grid-row: 3;
+}
+
+.moon {
+	grid-column: 8 / span 5;
+	grid-row: 4;
+	margin-top: clamp(0.4rem, 2vh, 1.2rem);
+	padding: clamp(1.1rem, 2.4vw, 1.7rem);
+}
+
+/* The three fields sit flush in one island. */
+.searches {
+	padding: 0 clamp(1rem, 2.4vw, 1.7rem);
 }
 
 .search {
@@ -380,17 +481,49 @@ main {
    Running
    ========================================================================= */
 .run {
-	padding: clamp(2rem, 5vw, 3.5rem) max(var(--gutter), calc((100% - 54rem) / 2))
-		clamp(3rem, 8vw, 6rem);
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	column-gap: clamp(0.7rem, 1.5vw, 1.2rem);
+	row-gap: clamp(1.1rem, 2.4vw, 1.9rem);
+	align-items: start;
+	padding-top: clamp(1.2rem, 4vh, 2.5rem);
+}
+
+.run > .island,
+.home > .island {
+	padding: clamp(1.1rem, 2.4vw, 1.7rem);
+}
+
+.home > .place {
+	padding: 0.55rem;
+}
+
+.run > .run-head {
+	grid-column: 1 / span 6;
+	grid-row: 1;
+}
+
+.run > .today {
+	grid-column: 7 / span 6;
+	grid-row: 1;
+	margin-top: clamp(0.6rem, 2.4vh, 1.6rem);
+}
+
+.run > .tabbed {
+	grid-column: 1 / span 11;
+	grid-row: 2;
+}
+
+.run > .run-links {
+	grid-column: 8 / span 5;
+	grid-row: 3;
 }
 
 .run-head {
 	display: grid;
-	gap: 1.75rem;
+	gap: 1rem;
 	align-items: end;
 	grid-template-columns: 1fr auto;
-	border-bottom: 1px solid var(--rule);
-	padding-bottom: 1.5rem;
 }
 
 .countdown {
@@ -404,14 +537,11 @@ main {
 .countdown strong {
 	font-family: var(--serif);
 	font-weight: 400;
-	font-size: clamp(3rem, 9vw, 5.25rem);
-	line-height: 0.85;
-	letter-spacing: -0.03em;
+	font-size: clamp(2.4rem, 6vw, 3.6rem);
+	line-height: 0.9;
+	letter-spacing: -0.04em;
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;
-	font-variation-settings:
-		'SOFT' 60,
-		'WONK' 1;
 }
 
 .facts {
@@ -737,15 +867,12 @@ main {
 .run-date {
 	margin: 0 0 0.5rem;
 	font-family: var(--serif);
-	font-size: clamp(2.25rem, 6vw, 3.25rem);
+	font-size: clamp(1.7rem, 3.4vw, 2.4rem);
 	font-weight: 400;
-	line-height: 0.95;
-	letter-spacing: -0.03em;
+	line-height: 1;
+	letter-spacing: -0.04em;
 	color: var(--ink);
 	font-variant-numeric: tabular-nums;
-	font-variation-settings:
-		'SOFT' 60,
-		'WONK' 1;
 }
 
 /* ============================================================================
@@ -956,12 +1083,13 @@ main {
 /* One row per place: the dithered strip is the ground of the whole row, the
    sun's height is drawn across it, and the times print on a paper label. */
 .place {
-	display: grid;
-	grid-template-columns: max-content minmax(0, 1fr) max-content;
-	gap: 1.1rem;
-	align-items: center;
-	height: 5rem;
-	padding: 0 0.8rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 0.5rem;
+	min-height: 6.4rem;
+	padding: 0.6rem;
 	background-image: var(--strip);
 	background-size: cover;
 	background-position: center 58%;
@@ -981,6 +1109,7 @@ main {
 .place-times {
 	display: flex;
 	align-items: baseline;
+	align-self: flex-end;
 	gap: 1rem;
 	padding: 0.34rem 0.65rem;
 	background: var(--paper);
@@ -999,6 +1128,11 @@ main {
 }
 
 .place .almanac-num {
+	color: var(--ink);
+	font-size: 0.78rem;
+}
+
+.almanac-num {
 	color: var(--ink);
 	font-size: 0.78rem;
 }
@@ -1101,7 +1235,8 @@ main {
 
 /* Marginal plates: the vault's engravings, set in the sheet's outer margins. */
 .margin-plate {
-	position: absolute;
+	position: fixed;
+	z-index: 1;
 	width: 3.2rem;
 	height: auto;
 	opacity: 0.92;
@@ -1109,28 +1244,96 @@ main {
 }
 
 .margin-plate--deer {
-	right: 1.3rem;
-	top: 7.5rem;
+	right: 1.6vw;
+	top: 16vh;
 }
 
 .margin-plate--swift {
-	left: 1.3rem;
-	bottom: 3.5rem;
-}
-
-.margin-plate--falcon {
-	right: 1.5rem;
-	bottom: 4rem;
+	left: 2vw;
+	bottom: 12vh;
 }
 
 .margin-plate--hare {
-	right: 1.5rem;
-	bottom: 5rem;
+	right: 2vw;
+	bottom: 14vh;
 }
 
 .margin-plate--horse {
-	left: 1.4rem;
-	bottom: 3.5rem;
+	left: 1.6vw;
+	bottom: 9vh;
+}
+
+@media (max-width: 58rem) {
+	.home,
+	.run {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(0.9rem, 2.2vw, 1.3rem);
+	}
+
+	.home > *,
+	.run > * {
+		grid-column: auto;
+		grid-row: auto;
+		margin-top: 0;
+	}
+
+	.home > .place {
+		min-height: 6rem;
+	}
+
+	/* Still uneven on a phone: widths and sides alternate. */
+	.home > .searches,
+	.run > .run-head,
+	.run > .tabbed {
+		width: 100%;
+	}
+
+	.home > .channels {
+		width: 58%;
+		align-self: flex-end;
+	}
+
+	.home > .sun-tag {
+		width: 32%;
+	}
+
+	.home > .place--marseille {
+		width: 100%;
+	}
+
+	.home > .place--wigginton {
+		width: 86%;
+	}
+
+	.home > .moon {
+		width: 90%;
+		align-self: flex-end;
+	}
+
+	.moon-phase {
+		font-size: 1rem;
+	}
+
+	.moon-next {
+		padding-left: 0;
+		grid-template-columns: 2.4rem auto minmax(0, 1fr);
+		gap: 0.35rem 0.7rem;
+	}
+
+	.moon-next .moon-name {
+		font-size: 0.85rem;
+	}
+
+	.run > .today {
+		width: 80%;
+		align-self: flex-end;
+	}
+
+	.run > .run-links {
+		width: 62%;
+		align-self: flex-end;
+	}
 }
 
 @media (max-width: 62rem) {
@@ -1348,9 +1551,6 @@ main {
 	}
 	.place {
 		grid-template-columns: max-content minmax(0, 1fr);
-		grid-template-areas:
-			'name times'
-			'curve curve';
 		gap: 0.55rem 0.7rem;
 		height: auto;
 		padding: 0.6rem 0.7rem;
@@ -1373,10 +1573,6 @@ main {
 	.place-time .eyebrow {
 		font-size: 0.5rem;
 		letter-spacing: 0.1em;
-	}
-	.sun-path {
-		grid-area: curve;
-		height: 2.5rem;
 	}
 	.almanac-num {
 		font-size: 0.68rem;

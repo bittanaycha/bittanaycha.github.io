@@ -9,18 +9,6 @@
 		wigginton: asset('strips/home.webp')
 	} as const;
 
-	/* The sun's height as a line across the row: x spans sunrise to sunset,
-	   y is the altitude against the day's peak, drawn in a 0–100 × 0–30 box. */
-	const sunLine = (curve: { x: number; y: number }[]): string =>
-		curve
-			.map((p, i) => `${i ? 'L' : 'M'}${(p.x * 100).toFixed(2)} ${(30 - p.y * 27).toFixed(2)}`)
-			.join(' ');
-
-	const sunPoint = (x: number, curve: { x: number; y: number }[]): number => {
-		const i = Math.min(curve.length - 1, Math.max(0, Math.round(x * (curve.length - 1))));
-		return 30 - curve[i].y * 27;
-	};
-
 	let google = $state<HTMLInputElement>();
 
 	// Rise, set and the moon are computed in the browser: the page is
@@ -77,7 +65,7 @@
 <svelte:window on:keydown={onKeydown} onresize={grow} />
 
 <main class="home">
-	<section class="searches" aria-label="Search">
+	<section class="searches island" aria-label="Search">
 		<form
 			class="search"
 			action="https://www.google.com/search"
@@ -148,7 +136,7 @@
 		</form>
 	</section>
 
-	<section class="channels" aria-label="Elsewhere">
+	<section class="channels island" aria-label="Elsewhere">
 		<a
 			class="channel"
 			href="https://www.youtube.com/"
@@ -182,51 +170,37 @@
 	</section>
 
 	{#if almanacData}
-		<section class="almanac" aria-label="Sun and moon">
-			<div class="almanac-title">
-				<AlmanacIcon kind="sun" />
-				<span class="eyebrow">sun</span>
-			</div>
+		<div class="sun-tag island">
+			<AlmanacIcon kind="sun" />
+			<span class="eyebrow">sun</span>
+		</div>
 
-			{#each almanacData.days as day (day.place.id)}
-				<div
-					class="place"
-					style:--strip={`url('${strips[day.place.id as keyof typeof strips]}')`}
-				>
-					<span class="place-name">{day.place.name}</span>
+		{#each almanacData.days as day (day.place.id)}
+			<div
+				class="place island place--{day.place.id}"
+				style:--strip={`url('${strips[day.place.id as keyof typeof strips]}')`}
+			>
+				<span class="place-name">{day.place.name}</span>
 
-					<svg class="sun-path" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-						<path class="sun-path-key" d={sunLine(day.curve)} />
-						<path class="sun-path-line" d={sunLine(day.curve)} />
-						<line class="sun-path-ground" x1="0" y1="29.5" x2="100" y2="29.5" />
-						{#if day.now !== null}
-							<circle
-								class="sun-path-now"
-								cx={day.now * 100}
-								cy={sunPoint(day.now, day.curve)}
-								r="1.6"
-							/>
-						{/if}
-					</svg>
-
-					<span class="place-times">
-						<span class="place-time">
-							<span class="eyebrow">rise</span>
-							<span class="almanac-num">{day.rise}</span>
-						</span>
-						<span class="place-time">
-							<span class="eyebrow">set</span>
-							<span class="almanac-num">{day.set}</span>
-						</span>
-						<span class="place-time">
-							<span class="eyebrow">day</span>
-							<span class="almanac-num">{day.length}</span>
-						</span>
+				<span class="place-times">
+					<span class="place-time">
+						<span class="eyebrow">rise</span>
+						<span class="almanac-num">{day.rise}</span>
 					</span>
-				</div>
-			{/each}
+					<span class="place-time">
+						<span class="eyebrow">set</span>
+						<span class="almanac-num">{day.set}</span>
+					</span>
+					<span class="place-time">
+						<span class="eyebrow">day</span>
+						<span class="almanac-num">{day.length}</span>
+					</span>
+				</span>
+			</div>
+		{/each}
 
-			<div class="almanac-title almanac-moon-title">
+		<section class="moon island" aria-label="Moon">
+			<div class="almanac-title">
 				<AlmanacIcon kind="moon" />
 				<span class="eyebrow">moon</span>
 			</div>
