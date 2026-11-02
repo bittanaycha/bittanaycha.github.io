@@ -170,12 +170,13 @@
 	</section>
 
 	{#if almanacData}
-		<div class="sun-tag island">
-			<AlmanacIcon kind="sun" />
-			<span class="eyebrow">sun</span>
-		</div>
+		<div class="sun-group">
+			<div class="sun-tag island">
+				<AlmanacIcon kind="sun" />
+				<span class="eyebrow">sun</span>
+			</div>
 
-		{#each almanacData.days as day (day.place.id)}
+			{#each almanacData.days as day (day.place.id)}
 			<div class="place island place--{day.place.id}">
 				<img
 					class="place-photo"
@@ -201,7 +202,8 @@
 					</span>
 				</span>
 			</div>
-		{/each}
+			{/each}
+		</div>
 
 		<section class="moon island" aria-label="Moon">
 			<div class="almanac-title">

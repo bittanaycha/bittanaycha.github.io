@@ -90,20 +90,19 @@
 <div class="ship" class:sailing bind:this={ship} aria-hidden="true">
 	<span class="bob">
 		<svg viewBox="0 0 18 13" width="38" height="28" shape-rendering="crispEdges">
-			<!-- pennant and mast -->
-			<rect x="11" y="1" width="3" height="1" fill="var(--ink)" />
-			<rect x="10" y="1" width="1" height="9" fill="#8fa3ff" />
-			<!-- sail -->
-			<rect x="10" y="2" width="1" height="1" fill="var(--ink)" />
-			<rect x="9" y="3" width="3" height="1" fill="var(--ink)" />
-			<rect x="8" y="4" width="5" height="1" fill="var(--ink)" />
-			<rect x="7" y="5" width="7" height="1" fill="var(--ink)" />
-			<rect x="6" y="6" width="9" height="1" fill="var(--ink)" />
-			<!-- hull -->
-			<rect x="3" y="10" width="12" height="1" fill="var(--accent)" />
-			<rect x="2" y="11" width="14" height="1" fill="var(--accent)" />
-			<rect x="4" y="12" width="10" height="1" fill="var(--accent-deep)" />
-			<rect x="15" y="9" width="2" height="1" fill="var(--ink)" />
+			<!-- mast -->
+			<rect x="10" y="1" width="1" height="9" fill="#3b2a12" />
+			<!-- red sail -->
+			<rect x="10" y="2" width="1" height="1" fill="#d9432f" />
+			<rect x="9" y="3" width="3" height="1" fill="#d9432f" />
+			<rect x="8" y="4" width="5" height="1" fill="#d9432f" />
+			<rect x="7" y="5" width="7" height="1" fill="#d9432f" />
+			<rect x="6" y="6" width="9" height="1" fill="#e0523c" />
+			<!-- yellow hull -->
+			<rect x="3" y="10" width="12" height="1" fill="#f2c14e" />
+			<rect x="2" y="11" width="14" height="1" fill="#f2c14e" />
+			<rect x="4" y="12" width="10" height="1" fill="#d9a83a" />
+			<rect x="15" y="9" width="2" height="1" fill="#3b2a12" />
 		</svg>
 	</span>
 </div>
@@ -127,7 +126,7 @@
 
 	svg {
 		display: block;
-		filter: drop-shadow(0 3px 0 rgb(0 0 0 / 0.45));
+		filter: drop-shadow(0 3px 0 rgb(58 38 18 / 0.35));
 	}
 
 	.ship.sailing .bob {

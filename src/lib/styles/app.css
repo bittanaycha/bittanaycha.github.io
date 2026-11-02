@@ -13,22 +13,28 @@
    Tokens — a dark sea, floating islands, white ink and ultramarine.
    ========================================================================= */
 :root {
-	--sea: #04060d;
-	--island: #0a1020;
-	--island-soft: #0c1428;
-	--ink: #f1f4ff;
-	--ink-dim: #aeb8d4;
-	--ink-faint: #6f7b9d;
-	--rule: rgb(110 135 225 / 0.26);
-	--rule-strong: rgb(140 165 255 / 0.55);
-	--accent: #3452ff;
-	--accent-deep: #2338c9;
+	--sea: #e9dfcc;
+	--card: #3d75bb;
+	--card-deep: #2f5f9c;
+	--card-ink: #f7f2e6;
+
+	/* Type on the paper itself (the nav, the footers). */
+	--paper-ink: #2c1d10;
+	--paper-ink-dim: #55402a;
+
+	/* Inside a card the ink turns to cream; the card re-scopes these. */
+	--ink: var(--paper-ink);
+	--ink-dim: var(--paper-ink-dim);
+	--ink-faint: #6d5539;
+	--rule: rgb(44 29 16 / 0.22);
+	--rule-strong: rgb(44 29 16 / 0.5);
+	--accent: #f4c95d;
+	--accent-deep: #d9432f;
 	--ice: #cfe0ff;
 
-	/* The almanac labels still ask for paper; on this page the paper is the island. */
-	--paper: var(--island);
-	--paper-deep: var(--sea);
-	--paper-light: var(--ink);
+	--paper: var(--card);
+	--paper-deep: var(--card-deep);
+	--paper-light: var(--card-ink);
 
 	--serif: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 	--mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -59,7 +65,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	background-color: var(--sea);
-	color: var(--ink-dim);
+	color: var(--paper-ink-dim);
 	font-family: var(--serif);
 	font-size: 16px;
 	line-height: 1.55;
@@ -78,21 +84,15 @@ body {
 	background-image: var(--photo);
 	background-size: cover;
 	background-position: center;
-	filter: brightness(0.42) saturate(0.55) contrast(1.05);
 }
 
+/* The photograph is the paper: a cream wash lifts it to a printable sheet
+   without hiding the leaves. */
 .sea::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background-image:
-		radial-gradient(120% 80% at 50% -10%, rgb(52 82 255 / 0.3), transparent 62%),
-		radial-gradient(circle at 1px 1px, rgb(150 175 255 / 0.14) 1px, transparent 0),
-		linear-gradient(rgb(4 6 13 / 0.55), rgb(4 6 13 / 0.78));
-	background-size:
-		auto,
-		22px 22px,
-		auto;
+	background: rgb(245 237 222 / 0.5);
 }
 
 /* Board grain over the whole surface: the plate, the type and the paper share
@@ -103,7 +103,7 @@ body::after {
 	inset: 0;
 	z-index: 60;
 	pointer-events: none;
-	opacity: 0.07;
+	opacity: 0.09;
 	mix-blend-mode: soft-light;
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
 	background-size: 160px 160px;
@@ -127,14 +127,19 @@ a {
 /* ============================================================================
    Small print
    ========================================================================= */
+.eyebrow.plain,
+.plain {
+	text-transform: none;
+}
+
 .eyebrow {
 	font-family: var(--serif);
-	font-size: 0.72rem;
-	font-weight: 600;
+	font-size: 0.76rem;
+	font-weight: 500;
 	line-height: 1.4;
-	letter-spacing: 0.2em;
-	text-transform: uppercase;
-	color: var(--ink-faint);
+	letter-spacing: 0.06em;
+	text-transform: capitalize;
+	color: var(--ink);
 	font-feature-settings: 'kern' 1;
 }
 .rule {
@@ -167,10 +172,11 @@ a {
 
 .bar a {
 	font-family: var(--mono);
-	font-size: 0.7rem;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
-	color: var(--ink-dim);
+	font-size: 0.74rem;
+	font-weight: 500;
+	letter-spacing: 0.04em;
+	text-transform: capitalize;
+	color: var(--paper-ink);
 	transition: color 0.15s ease;
 }
 .bar a:hover {
@@ -211,8 +217,8 @@ main {
 	border-top: 1px solid var(--rule);
 	font-family: var(--mono);
 	font-size: 0.625rem;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 }
 
@@ -220,61 +226,43 @@ main {
    Islands — each block of content floats on the sea.
    ========================================================================= */
 .island {
+	--ink: var(--card-ink);
+	--ink-dim: rgb(247 242 230 / 0.8);
+	--ink-faint: rgb(247 242 230 / 0.58);
+	--rule: rgb(255 255 255 / 0.28);
+	--rule-strong: rgb(255 255 255 / 0.7);
+
 	position: relative;
-	background: var(--island);
-	border: 1px solid var(--rule);
+	color: var(--card-ink);
+	background-color: #3d75bb;
+	background-image:
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23p)' opacity='0.55'/%3E%3C/svg%3E"),
+		radial-gradient(52% 44% at 12% 6%, rgb(255 255 255 / 0.16), transparent 66%),
+		radial-gradient(46% 40% at 78% 22%, rgb(255 255 255 / 0.08), transparent 70%),
+		radial-gradient(64% 58% at 92% 104%, rgb(18 50 100 / 0.3), transparent 62%),
+		radial-gradient(40% 36% at 38% 86%, rgb(24 60 120 / 0.16), transparent 70%);
+	background-size:
+		220px 220px,
+		auto,
+		auto,
+		auto,
+		auto;
+	background-blend-mode: soft-light, normal, normal, normal, normal;
+	border-radius: 14px 19px 15px 21px / 19px 14px 21px 15px;
+	box-shadow:
+		inset 0 0 26px rgb(18 45 95 / 0.16),
+		inset 0 -18px 30px -24px rgb(15 45 95 / 0.5),
+		0 1px 1px rgb(70 50 25 / 0.12),
+		0 14px 26px -24px rgb(40 70 120 / 0.6);
 	transition:
-		border-color 0.3s ease,
-		box-shadow 0.3s ease,
-		background-color 0.3s ease;
+		transform 0.3s ease,
+		filter 0.3s ease,
+		box-shadow 0.3s ease;
 }
 
 .island:hover {
-	border-color: var(--rule-strong);
-	box-shadow:
-		0 0 0 1px rgb(52 82 255 / 0.18),
-		0 26px 60px -40px rgb(52 82 255 / 0.9);
-}
-
-/* Registration ticks just outside each island: the chart's own marks. */
-.island::before {
-	content: '';
-	position: absolute;
-	inset: -0.35rem;
-	pointer-events: none;
-	opacity: 0.55;
-	background:
-		linear-gradient(var(--rule-strong), var(--rule-strong)) left top / 0.5rem 1px no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) left top / 1px 0.5rem no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) right top / 0.5rem 1px no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) right top / 1px 0.5rem no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) left bottom / 0.5rem 1px no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) left bottom / 1px 0.5rem no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) right bottom / 0.5rem 1px no-repeat,
-		linear-gradient(var(--rule-strong), var(--rule-strong)) right bottom / 1px 0.5rem no-repeat;
-}
-
-/* Wake pixels the ship drops behind it. */
-.wake {
-	position: fixed;
-	z-index: 4;
-	width: 3px;
-	height: 3px;
-	background: var(--ice);
-	opacity: 0;
-	pointer-events: none;
-	animation: wake 1.3s ease-out forwards;
-}
-
-@keyframes wake {
-	0% {
-		opacity: 0.5;
-		transform: translateY(0) scale(1);
-	}
-	100% {
-		opacity: 0;
-		transform: translateY(6px) scale(0.6);
-	}
+	filter: saturate(1.04) brightness(1.04);
+	transform: translateY(-1px);
 }
 
 /* ============================================================================
@@ -301,24 +289,29 @@ main {
 	margin-top: clamp(1.5rem, 7vh, 3.5rem);
 }
 
+.sun-group {
+	grid-column: 1 / span 9;
+	grid-row: 2;
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 0.5rem;
+}
+
 .sun-tag {
 	grid-column: 1 / span 2;
-	grid-row: 2;
+	align-self: start;
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 0.45rem;
 	padding: 0.6rem 0.7rem;
 }
 
 .place--marseille {
-	grid-column: 4 / span 8;
-	grid-row: 2;
-	margin-top: clamp(0.4rem, 2vh, 1.2rem);
+	grid-column: 3 / span 10;
 }
 
 .place--wigginton {
-	grid-column: 1 / span 9;
-	grid-row: 3;
+	grid-column: 1 / span 12;
 }
 
 .moon {
@@ -494,7 +487,8 @@ main {
 	padding: clamp(1.1rem, 2.4vw, 1.7rem);
 }
 
-.home > .place {
+.home > .place,
+.sun-group > .place {
 	padding: 0.55rem;
 }
 
@@ -593,7 +587,7 @@ main {
 	position: relative;
 	display: block;
 	width: 100%;
-	border: 1px solid color-mix(in oklab, var(--ink) 26%, transparent);
+	border: 1px solid color-mix(in oklab, var(--ink) 42%, transparent);
 	background: transparent;
 }
 .plot-col--gate .plot {
@@ -605,10 +599,10 @@ main {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: color-mix(in oklab, var(--ink) 62%, transparent);
+	background: color-mix(in oklab, var(--accent) 88%, transparent);
 }
 .plot-col--done .plot-log {
-	background: color-mix(in oklab, var(--ink) 38%, transparent);
+	background: color-mix(in oklab, var(--accent) 58%, transparent);
 }
 .plot-col--now .plot-log {
 	background: var(--accent);
@@ -620,8 +614,8 @@ main {
 	margin: 0.75rem 0 0;
 	font-family: var(--mono);
 	font-size: 0.6rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 }
 .legend span {
@@ -635,10 +629,10 @@ main {
 	height: 0.5rem;
 }
 .swatch--plan {
-	border: 1px solid color-mix(in oklab, var(--ink) 30%, transparent);
+	border: 1px solid color-mix(in oklab, var(--ink) 46%, transparent);
 }
 .swatch--log {
-	background: color-mix(in oklab, var(--ink) 62%, transparent);
+	background: color-mix(in oklab, var(--accent) 88%, transparent);
 }
 
 .tick {
@@ -684,8 +678,8 @@ main {
 	font-family: var(--mono);
 	font-size: 0.55rem;
 	font-weight: 400;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 	text-align: left;
 	padding: 0 0.6rem 0.5rem 0;
@@ -733,8 +727,8 @@ main {
 .w-phase {
 	font-family: var(--mono);
 	font-size: 0.55rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 	white-space: nowrap;
 }
@@ -925,8 +919,8 @@ main {
 	padding: 0 0 0.55rem;
 	font-family: var(--mono);
 	font-size: 0.7rem;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 	cursor: pointer;
 	transition:
@@ -1042,8 +1036,8 @@ main {
 	padding-top: 0.9rem;
 	font-family: var(--mono);
 	font-size: 0.65rem;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 }
 .run-links a {
@@ -1117,8 +1111,8 @@ main {
 	font-family: var(--serif);
 	font-size: 0.78rem;
 	font-weight: 600;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	text-transform: capitalize;
 	color: var(--ink);
 }
 
@@ -1139,7 +1133,7 @@ main {
 
 .place-time .eyebrow {
 	font-size: 0.56rem;
-	letter-spacing: 0.16em;
+	letter-spacing: 0.06em;
 	color: var(--ink-faint);
 }
 
@@ -1229,8 +1223,8 @@ main {
 	font-family: var(--serif);
 	font-size: 0.62rem;
 	font-weight: 600;
-	letter-spacing: 0.2em;
-	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	text-transform: capitalize;
 	color: var(--ink-faint);
 }
 
@@ -1294,8 +1288,16 @@ main {
 		margin-top: 0;
 	}
 
-	.home > .place {
+	.sun-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		width: 100%;
+	}
+
+	.sun-group > .place {
 		min-height: 6rem;
+		width: 100%;
 	}
 
 	/* Still uneven on a phone: widths and sides alternate. */
@@ -1310,15 +1312,11 @@ main {
 		align-self: flex-end;
 	}
 
-	.home > .sun-tag {
-		width: 32%;
+	.home > .sun-group > .sun-tag {
+		width: 34%;
 	}
 
-	.home > .place--marseille {
-		width: 100%;
-	}
-
-	.home > .place--wigginton {
+	.home > .sun-group > .place--wigginton {
 		width: 86%;
 	}
 
@@ -1381,7 +1379,7 @@ main {
 	}
 	.place-name {
 		font-size: 0.7rem;
-		letter-spacing: 0.12em;
+		letter-spacing: 0.05em;
 		padding: 0.25rem 0.45rem;
 	}
 	.place-times {

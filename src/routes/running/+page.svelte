@@ -205,7 +205,7 @@
 		</ul>
 
 		<table class="weeks">
-			<caption class="eyebrow">{totals.weekCount} weeks</caption>
+			<caption class="eyebrow plain">{totals.weekCount} weeks</caption>
 			<thead>
 				<tr>
 					<th scope="col" class="w-num">wk</th>
@@ -312,7 +312,7 @@
 						{solution.shortest}–{solution.longest} m
 					</p>
 				{:else}
-					<p class="eyebrow">mm:ss or h:mm:ss</p>
+					<p class="eyebrow plain">mm:ss or h:mm:ss</p>
 				{/if}
 			</div>
 		</div>
