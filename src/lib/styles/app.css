@@ -284,19 +284,26 @@ main {
 	grid-column: 1 / span 12;
 }
 
-/* The moon island prints its plate inside the card, to the right of the dates
-   and inset by the same padding the card uses: full bleed put the bright disc
-   behind "beaver moon", and cropping could not move it clear. */
+/* The moon island is the plate itself: the dithered night runs to the card's
+   edge, a rule frames it, and the words sit in the sky above the disc. */
 .moon {
-	grid-column: 8 / span 5;
-	grid-row: 3;
-	margin-top: clamp(0.4rem, 1.6vh, 1rem);
+	grid-column: 10 / span 3;
+	grid-row: 2;
+	min-height: clamp(17rem, 40vh, 27rem);
+	border: 3px solid var(--rule-strong);
+	container-type: inline-size;
 	--pad: clamp(0.85rem, 1.8vw, 1.25rem);
+	/* The plate is darker and busier than a plain island, so the small print
+	   gives up less of its paper. */
+	--ink-dim: rgb(247 242 230 / 0.94);
+	--ink-faint: rgb(247 242 230 / 0.74);
 	padding: var(--pad);
-	background-image: var(--plate);
-	background-repeat: no-repeat;
-	background-size: auto calc(100% - var(--pad) * 2);
-	background-position: right var(--pad) center;
+	/* The words sit in the sky, so the plate is deepened behind them. */
+	background-image:
+		linear-gradient(rgb(24 15 8 / 0.5), rgb(24 15 8 / 0) 42%),
+		var(--plate);
+	background-size: auto, cover;
+	background-position: center, center;
 }
 
 /* The three fields sit flush in one island. */
@@ -1188,15 +1195,42 @@ main {
 	color: var(--ink);
 }
 
+/* Three columns wide is not enough for label, date and name on one line, so
+   the full moon's name sits under its date instead of pushing the row past
+   the frame. */
 .moon-next {
 	display: grid;
-	grid-template-columns: max-content max-content 1fr;
-	gap: 0.25rem 1rem;
+	grid-template-columns: max-content minmax(0, 1fr);
+	gap: 0.1rem 0.75rem;
 	margin: 0.55rem 0 0;
 	padding-left: 2.3rem;
 }
 
+/* In a narrow card the hanging indent costs more than it aligns. */
+@container (max-width: 190px) {
+	.moon-row,
+	.moon-next {
+		padding-left: 0;
+	}
+}
+
+.moon-next dt:nth-of-type(1),
+.moon-next dd:nth-of-type(1) {
+	grid-row: 1;
+}
+
+.moon-next .moon-name {
+	grid-row: 2;
+	padding-bottom: 0.25rem;
+}
+
+.moon-next dt:nth-of-type(2),
+.moon-next dd:nth-of-type(3) {
+	grid-row: 3;
+}
+
 .moon-next dt {
+	grid-column: 1;
 	align-self: center;
 	font-family: var(--serif);
 	font-size: 0.62rem;
@@ -1207,6 +1241,7 @@ main {
 }
 
 .moon-next dd {
+	grid-column: 2;
 	margin: 0;
 	font-family: var(--mono);
 	font-size: 0.78rem;
@@ -1301,27 +1336,10 @@ main {
 	.home > .moon {
 		width: 90%;
 		align-self: flex-end;
-		/* Too narrow to give the plate a clear corner, so here it is a wash
-		   behind the text instead of a print beside it. */
-		background-image:
-			linear-gradient(rgb(11 17 195 / 0.68), rgb(11 17 195 / 0.68)),
-			var(--plate);
-		background-size:
-			100% 100%,
-			cover;
-		background-position:
-			left center,
-			50% 45%;
 	}
 
 	.moon-phase {
 		font-size: 1rem;
-	}
-
-	.moon-next {
-		padding-left: 0;
-		grid-template-columns: 2.4rem auto minmax(0, 1fr);
-		gap: 0.35rem 0.7rem;
 	}
 
 	.moon-next .moon-name {
