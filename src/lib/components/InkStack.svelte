@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { inkSets, type InkSet } from '#lib/plate/inks';
+	import { inkSets, type InkSet } from '#lib/studio/inks';
 
 	let { value = $bindable() }: { value: InkSet } = $props();
 

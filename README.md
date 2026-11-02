@@ -4,7 +4,7 @@ A personal homepage and a marathon training page. SvelteKit, fully prerendered,
 served as static files from GitHub Pages at <https://bittanaycha.github.io>.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
-`running`, `google`, `wikipedia`, units) and the marathon plan's own data.
+`dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
 
 ## Develop
 
@@ -21,30 +21,38 @@ npm run check      # type + a11y diagnostics
 | File | What it controls |
 | --- | --- |
 | `src/lib/styles/app.css` | The whole design system: kraft/ink tokens, type, grain, layout |
+| `static/background.webp` | The leaf photograph, blurred and veiled behind every page |
 | `src/routes/+layout.svelte` | Running head (nav), page titles, icons |
-| `src/routes/+page.svelte` | Homepage — two search fields, a YouTube button, a link to the plate |
-| `src/routes/plate/+page.svelte` | Plate — the dithering studio (load, tune, save) |
+| `src/routes/+page.svelte` | Homepage — google, wikipedia and deepseek fields, a YouTube button |
+| `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — countdown, weekly bars, gates, table |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Generated — see below |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
-| `src/lib/plate/` | The plate engine: masks, inks, samples, worker, compositing |
+| `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
 | `src/lib/components/` | `Slider`, `Segmented`, `InkStack` — the studio's controls |
 | `src/lib/decode.ts` | File/paste decoding for dropped images |
 | `static/fonts/` | Fraunces (variable) and Space Mono, self-hosted |
 
-### The plate
+### The dither studio
 
-`/plate` is the dithering studio ported from
+`/dither` is the dithering studio ported from
 [unwalled-garden](https://github.com/bittanaycha/unwalled-garden): a photograph or
 a drawing is cover-fitted, tone-mapped, then dithered through the chosen screen
 and printed in the ink ramp. Marks are sewn on in a worker thread, so dragging a
 slider only costs a 620px draft; the full 1400px print lands once the hand stops.
 
-The engine (`src/lib/plate/`, `src/lib/dither/`) is unchanged from the garden; the
+The engine (`src/lib/studio/`, `src/lib/dither/`) is unchanged from the garden; the
 page and the three controls were rewritten in this repo's own CSS, since the
 homepage has no Tailwind. Drop or paste an image, or start from the generated
 stones.
+
+### DeepSeek
+
+The third field posts to `https://chat.deepseek.com/?q=…`. DeepSeek reads `q` (or
+`prompt`) from the URL, stashes it in `sessionStorage` and drops it into the chat
+box once signed in, so the field hands the prompt over and opens the chat in a new
+tab. There is no submit endpoint to post to.
 
 ### YouTube
 
@@ -93,4 +101,6 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
+- The background photograph is a fixed, blurred, veiled layer; `main` carries
+  `z-index: 5` so page content paints above it.
 - No runtime dependencies, no server, no remote fonts or assets.

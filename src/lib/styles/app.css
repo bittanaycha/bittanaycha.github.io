@@ -78,10 +78,6 @@ body {
 	display: flex;
 	flex-direction: column;
 	background-color: var(--paper);
-	background-image:
-		radial-gradient(120% 80% at 18% -12%, #57432c 0%, transparent 58%),
-		radial-gradient(80% 60% at 100% 4%, #4f3c28 0%, transparent 62%);
-	background-attachment: fixed;
 	color: var(--ink-dim);
 	font-family: var(--serif);
 	font-size: 16px;
@@ -91,6 +87,29 @@ body {
 		'SOFT' 35,
 		'WONK' 0;
 	-webkit-font-smoothing: antialiased;
+}
+
+/* The photograph behind everything: one fixed sheet, veiled so the type keeps
+   its contrast. The image URL is set in the layout, where `asset()` can add the
+   deploy's base path. */
+.paper {
+	position: fixed;
+	inset: -8px;
+	z-index: 0;
+	pointer-events: none;
+	background-color: var(--paper);
+	background-size: cover;
+	background-position: center;
+	/* Soften the photograph into a ground: the leaves stay legible as texture,
+	   the hairlines and the small print stay legible as type. */
+	filter: blur(3px) saturate(0.9);
+}
+
+.paper::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: rgba(58, 42, 27, 0.87);
 }
 
 /* Board grain over the whole surface: the plate, the type and the paper share
@@ -219,15 +238,22 @@ main {
 
 .search {
 	display: flex;
-	align-items: center;
-	gap: 1rem;
-	padding: 1.35rem 0;
+	align-items: stretch;
 	border-bottom: 1px solid var(--rule);
+}
+
+/* The whole row is the target: the padding lives on the children, so the
+   label, the field and the arrow all answer a click anywhere in their height. */
+.search > * {
+	padding-block: 1.35rem;
 }
 
 .search label {
 	flex: none;
 	width: 6.5rem;
+	display: flex;
+	align-items: center;
+	padding-right: 1rem;
 	cursor: text;
 }
 
@@ -236,7 +262,7 @@ main {
 	min-width: 0;
 	background: none;
 	border: 0;
-	padding: 0;
+	padding-inline: 0;
 	color: var(--ink);
 	font-family: var(--serif);
 	font-size: clamp(1.05rem, 2.6vw, 1.35rem);
@@ -263,19 +289,26 @@ main {
 	flex: none;
 	background: none;
 	border: 0;
-	padding: 0.15rem 0;
+	padding-inline: 1rem 0;
 	color: var(--ink-faint);
 	font-family: var(--mono);
 	font-size: 0.95rem;
 	line-height: 1;
 	cursor: pointer;
-	transition:
-		color 0.15s ease,
-		transform 0.15s ease;
+	transition: color 0.15s ease;
 }
 .search button:hover {
 	color: var(--accent);
-	transform: translateX(2px);
+}
+
+.whale-label {
+	color: var(--ink-dim);
+}
+
+.whale {
+	width: 1.6rem;
+	height: 1.6rem;
+	fill: currentColor;
 }
 
 /* ============================================================================
@@ -283,28 +316,23 @@ main {
    ========================================================================= */
 .channels {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: 1rem;
 	padding: 0.9rem 0 0.2rem;
 }
 
-.channels > .eyebrow {
-	flex: none;
-	width: 6.5rem;
-}
-
 .channel {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
-	gap: 0.45rem;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
 	border: 1px solid var(--rule);
-	padding: 0.45rem 0.7rem;
-	font-family: var(--mono);
-	font-size: 0.6875rem;
-	letter-spacing: 0.04em;
 	color: var(--ink-dim);
 	text-decoration: none;
-	transition: border-color 120ms ease, color 120ms ease;
+	transition:
+		border-color 120ms ease,
+		color 120ms ease;
 }
 
 .channel:hover {
@@ -318,37 +346,13 @@ main {
 }
 
 .mark {
-	width: 0.95rem;
-	height: 0.95rem;
+	width: 1.15rem;
+	height: 1.15rem;
 	fill: currentColor;
 }
 
 .mark-cut {
-	fill: var(--paper);
-}
-
-.elsewhere {
-	display: flex;
-	align-items: baseline;
-	gap: 0.65rem;
-	margin: 0;
-	padding-top: 1.35rem;
-	border-top: 1px solid var(--rule);
-	color: var(--ink-faint);
-	font-family: var(--mono);
-	font-size: 0.75rem;
-}
-
-.elsewhere a {
-	color: var(--ink-dim);
-	text-decoration: none;
-	border-bottom: 1px solid var(--rule-strong);
-	padding-bottom: 1px;
-}
-
-.elsewhere a:hover {
-	color: var(--accent);
-	border-bottom-color: var(--accent);
+	fill: var(--paper-deep);
 }
 
 /* ============================================================================
@@ -623,14 +627,6 @@ main {
    Narrow screens
    ========================================================================= */
 @media (max-width: 34rem) {
-	.channels {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.7rem;
-	}
-	.channels > .eyebrow {
-		width: auto;
-	}
 	.weeks th.num,
 	.weeks td.num {
 		padding-left: 0.9rem;

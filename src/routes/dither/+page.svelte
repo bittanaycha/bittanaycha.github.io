@@ -5,11 +5,11 @@
 	import Slider from '#lib/components/Slider.svelte';
 	import { decodeImage } from '#lib/decode';
 	import type { BayerSize } from '#lib/dither/bayer';
-	import { inkSetById, inkSetRamp, type InkSet } from '#lib/plate/inks';
-	import { renderPlate, type PlateOptions } from '#lib/plate/render';
-	import type { FrameMessage, StaleMessage } from '#lib/plate/plate.worker';
-	import { createStonesDrawing, createStonesPhoto } from '#lib/plate/samples';
-	import { screenModes, type ScreenMode } from '#lib/plate/screen';
+	import { inkSetById, inkSetRamp, type InkSet } from '#lib/studio/inks';
+	import { renderPlate, type PlateOptions } from '#lib/studio/render';
+	import type { FrameMessage, StaleMessage } from '#lib/studio/render.worker';
+	import { createStonesDrawing, createStonesPhoto } from '#lib/studio/samples';
+	import { screenModes, type ScreenMode } from '#lib/studio/screen';
 
 	/** Longest edge of the on-screen print, in device pixels. */
 	const MAX_EDGE = 1400;
@@ -364,7 +364,7 @@
 			if (!blob) return;
 			const link = document.createElement('a');
 			link.href = URL.createObjectURL(blob);
-			link.download = `plate-${ink.id}-${Date.now()}.png`;
+			link.download = `dither-${ink.id}-${Date.now()}.png`;
 			link.click();
 			URL.revokeObjectURL(link.href);
 		}, 'image/png');
@@ -416,7 +416,7 @@
 
 		if (typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') {
 			try {
-				worker = new Worker(new URL('../../lib/plate/plate.worker.ts', import.meta.url), {
+				worker = new Worker(new URL('../../lib/studio/render.worker.ts', import.meta.url), {
 					type: 'module'
 				});
 				worker.onmessage = onWorkerFrame;
@@ -453,10 +453,10 @@
 	/>
 </svelte:head>
 
-<div class="studio">
+<main class="studio">
 	<header class="studio-head">
 		<span class="eyebrow">studio</span>
-		<h1>Plate</h1>
+		<h1>Dither</h1>
 		<p class="blurb">
 			A photograph or a drawing, reduced to one screen and two inks. Drop your own image, or start
 			from the stones.
@@ -509,7 +509,7 @@
 					onclick={() => (comparing = !comparing)}
 					aria-pressed={comparing}
 				>
-					{comparing ? 'plate' : 'source'}
+					{comparing ? 'dither' : 'source'}
 				</button>
 
 				<span class="status">{status}</span>
@@ -671,7 +671,7 @@
 			/>
 		</aside>
 	</div>
-</div>
+</main>
 
 <style>
 	.studio {
