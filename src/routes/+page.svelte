@@ -171,7 +171,7 @@
 
 	{#if almanacData}
 		<div class="sun-group">
-			<div class="sun-tag island">
+			<div class="sun-tag island" style:--plate={`url('${asset('dithers/sun.webp')}')`}>
 				<AlmanacIcon kind="sun" />
 				<span class="eyebrow">sun</span>
 			</div>
@@ -205,7 +205,11 @@
 			{/each}
 		</div>
 
-		<section class="moon island" aria-label="Moon">
+		<section
+			class="moon island"
+			aria-label="Moon"
+			style:--plate={`url('${asset('dithers/moon.webp')}')`}
+		>
 			<div class="almanac-title">
 				<AlmanacIcon kind="moon" />
 				<span class="eyebrow">moon</span>

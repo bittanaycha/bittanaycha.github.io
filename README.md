@@ -25,8 +25,9 @@ npm run sync       # regenerate the day table and run log from the vault
 | File | What it controls |
 | --- | --- |
 | `src/lib/styles/app.css` | The whole design system: paper, card, ink and accent tokens, type, grid, wake |
-| `static/background.webp` | The leaf photograph: the paper the whole page is printed on |
+| `static/background.png` | The leaf photograph: the paper the whole page is printed on |
 | `static/strips/` | The dithered coast and forest strips in the almanac |
+| `static/dithers/` | The sun and moon plates: `sun.webp` behind the sun tag, `moon.webp` in the moon island |
 | `static/animals/` | The five engraved plates (deer, falcon, hare, horse, swift) |
 | `src/routes/+layout.svelte` | The sea layer, the deck, the nav, page titles, icons, the ship |
 | `src/lib/components/Ship.svelte` | The pixel sailboat: docking, tacking, wake |
@@ -128,8 +129,14 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
-- The paper is the photograph in `static/background.webp`, unfiltered, under a
+- The paper is the photograph in `static/background.png`, unfiltered, under a
   `rgb(245 237 222 / 0.5)` wash. Ink on paper is `#2c1d10`.
+- A `static/` image can never be reached by `url()` written inside a `.css`
+  file: Vite copies the URL through untouched and the browser resolves it
+  against the hashed stylesheet, so it 404s on Pages while working in `dev`,
+  where the stylesheet is inlined into the page. Every picture the CSS paints
+  arrives as a custom property set from `asset()` in the markup — `--photo` on
+  `.sea`, `--plate` on the sun tag and the moon island.
 - Cards are the only surfaces: a `#3d75bb` wash with a `feTurbulence` grain
   blended into it, uneven rounded corners, a soft brown drop shadow and
   registration ticks just outside each corner. Their ink is cream (`#f7f2e6`);
@@ -139,7 +146,9 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
 - The deck is full width with an asymmetric gutter (narrow left, wide right), so
   the composition leans and the sea stays open on the right. Both pages place
   every island on a 12-column chart with explicit column and row numbers rather
-  than stacking them.
+  than stacking them. Row gaps and the deck's padding are in `vh`, so the index
+  deck closes inside one screen instead of dropping the moon island under the
+  fold.
 - `Ship.svelte` docks at the top-right of whichever island the pointer is over,
   gliding in 900 ms, then tacks a few pixels against the current while it is
   moored and drops fading pixels of wake behind it. `prefers-reduced-motion`
@@ -147,6 +156,10 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
 - The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
   fills the disc and the crescent, so they read as printed woodcuts rather than
   icons. The moon sits in its own island below the two place strips.
+- The sun tag takes its dithered sunset full bleed. The moon island prints its
+  plate inside the card, to the right of the dates, inset by the card's own
+  padding; under 58rem the card has no clear corner left, so the same plate
+  becomes a wash behind the text instead.
 - Each place is a card holding its dithered photograph as a real `<img>`
   (`object-fit: cover`): the name sits top-left, rise/set/day bottom-right. The
   CSS `background: … cover` version failed to paint the home strip on Pages, so

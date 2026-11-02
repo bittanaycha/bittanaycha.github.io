@@ -22,7 +22,7 @@
 	<meta name="color-scheme" content="dark" />
 </svelte:head>
 
-<div class="sea" style:--photo={`url('${asset('background.webp')}')`} aria-hidden="true"></div>
+<div class="sea" style:--photo={`url('${asset('background.png')}')`} aria-hidden="true"></div>
 
 <div class="deck">
 	<header class="site-header">
