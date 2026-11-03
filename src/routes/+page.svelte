@@ -10,6 +10,21 @@
 	} as const;
 
 	let google = $state<HTMLInputElement>();
+	let googleQuery = $state('');
+	let wiki = $state<HTMLInputElement>();
+	let wikiQuery = $state('');
+
+	// A search that opened its answer in another tab has nothing left to ask, so
+	// the field goes back to empty. The clear waits for the next task: the browser
+	// builds the form's entry list right after the submit event, and a field
+	// emptied in the handler would submit nothing.
+	function clearAfterSubmit(
+		field: HTMLInputElement | HTMLTextAreaElement | undefined,
+		clear: () => void
+	) {
+		if (!field?.value) return;
+		setTimeout(clear, 0);
+	}
 
 	// Rise, set and the moon are computed in the browser: the page is
 	// prerendered, so a build-time "today" would be the deploy's today.
@@ -42,12 +57,12 @@
 		document.fonts?.ready.then(grow);
 	});
 
-	// Enter hands the prompt over, Shift+Enter starts a new line, the same
-	// bargain every chat box makes.
+	// Enter sends the prompt, Shift+Enter starts a new line, the same bargain
+	// every chat box makes.
 	function onPromptKeydown(event: KeyboardEvent) {
 		if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
 		event.preventDefault();
-		promptForm?.requestSubmit();
+		if (prompt.trim()) promptForm?.requestSubmit();
 	}
 
 	// `/` jumps to the first field from anywhere on the page, the way a browser
@@ -72,6 +87,7 @@
 			method="get"
 			target="_blank"
 			rel="noreferrer"
+			onsubmit={() => clearAfterSubmit(google, () => (googleQuery = ''))}
 		>
 			<label class="eyebrow" for="q-google">google</label>
 			<input
@@ -81,6 +97,7 @@
 				autocomplete="off"
 				spellcheck="false"
 				bind:this={google}
+				bind:value={googleQuery}
 			/>
 			<button type="submit" aria-label="Search Google"><span aria-hidden="true">↵</span></button>
 		</form>
@@ -91,6 +108,7 @@
 			method="get"
 			target="_blank"
 			rel="noreferrer"
+			onsubmit={() => clearAfterSubmit(wiki, () => (wikiQuery = ''))}
 		>
 			<label class="eyebrow" for="q-wikipedia">wikipedia</label>
 			<input
@@ -99,11 +117,15 @@
 				type="search"
 				autocomplete="off"
 				spellcheck="false"
+				bind:this={wiki}
+				bind:value={wikiQuery}
 			/>
 			<button type="submit" aria-label="Search Wikipedia"><span aria-hidden="true">↵</span></button>
 		</form>
 
-		<!-- DeepSeek reads `?q=` on load and prefills the chat box with it. -->
+		<!-- DeepSeek's landing page sends a prompt handed over with `autosend=1`;
+		     the chat app reads `q` alongside it and sends once the message is in
+		     the box. -->
 		<form
 			class="search search--prompt"
 			action="https://chat.deepseek.com/"
@@ -111,6 +133,7 @@
 			target="_blank"
 			rel="noreferrer"
 			bind:this={promptForm}
+			onsubmit={() => clearAfterSubmit(promptField, () => (prompt = ''))}
 		>
 			<label class="whale-label" for="q-deepseek" title="Ask DeepSeek">
 				<svg class="whale" viewBox="0 0 24 24" aria-hidden="true">
@@ -131,8 +154,14 @@
 				bind:value={prompt}
 				onkeydown={onPromptKeydown}
 			></textarea>
-			<span class="sr-only" id="q-deepseek-hint">Enter sends, shift and enter starts a new line</span>
-			<button type="submit" aria-label="Ask DeepSeek"><span aria-hidden="true">↵</span></button>
+			<input type="hidden" name="autosend" value="1" />
+			<input type="hidden" name="source" value="landing" />
+			<span class="sr-only" id="q-deepseek-hint"
+				>Enter sends the prompt straight away; Shift and Enter starts a new line.</span
+			>
+			<button type="submit" aria-label="Send to DeepSeek" title="Send now"
+				><span aria-hidden="true">↑</span></button
+			>
 		</form>
 	</section>
 

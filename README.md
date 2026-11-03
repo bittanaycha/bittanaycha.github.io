@@ -62,14 +62,16 @@ stones.
 
 ### DeepSeek
 
-The third field posts to `https://chat.deepseek.com/?q=…`. DeepSeek reads `q` (or
-`prompt`) from the URL, stashes it in `sessionStorage` and drops it into the chat
-box once signed in, so the field hands the prompt over and opens the chat in a new
-tab. There is no submit endpoint to post to.
+The third field posts to
+`https://chat.deepseek.com/?q=…&autosend=1&source=landing`, the URL DeepSeek's own
+landing page uses when it hands a prompt over. DeepSeek reads `q`, stashes it in
+`sessionStorage` and drops it into the chat box once signed in; `autosend=1` makes
+the chat app send it as soon as it lands, so there is no second Enter to press.
+There is no submit endpoint to post to.
 
 The field is a textarea that grows to its content (up to `42dvh`, then it
-scrolls), because prompts run to several lines. Enter submits, Shift+Enter starts
-a new line. `grow()` measures again after `document.fonts.ready`, since the
+scrolls), because prompts run to several lines. Enter sends, Shift+Enter starts a
+new line. `grow()` measures again after `document.fonts.ready`, since the
 fallback face and Geist Mono do not share metrics and the empty field would
 otherwise be a line short.
 
@@ -129,6 +131,9 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   instead of a `base` string, so links are `resolve('/running')` and assets are
   `asset('/photos/…')`.
 - `/` focuses the google field.
+- Every search field clears once its query has gone to the new tab: the browser
+  builds the form's entry list right after the `submit` event, so the clear runs
+  in a `setTimeout(…, 0)` and does not empty the query before it is read.
 - The paper is the photograph in `static/background.png`, unfiltered, under a
   `rgb(245 237 222 / 0.5)` wash. Ink on paper is `#2c1d10`.
 - A `static/` image can never be reached by `url()` written inside a `.css`
