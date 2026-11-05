@@ -424,6 +424,7 @@ main {
 	gap: 1rem;
 	row-gap: 0.55rem;
 	padding: 0.9rem 0 0.2rem;
+	container-type: inline-size;
 }
 
 .channel {
@@ -450,15 +451,20 @@ main {
 	outline-offset: 2px;
 }
 
-/* A word chip is as wide as its masthead; the square stays for the glyphs. */
-.channel--word {
+/* A masthead chip is as wide as its wordmark; the square stays for the glyphs. */
+.channel--mark {
 	width: auto;
-	padding-inline: 0.35rem;
-	font-family: var(--mono);
-	font-size: 0.7rem;
-	letter-spacing: 0.02em;
-	text-transform: capitalize;
-	white-space: nowrap;
+	padding-inline: 0.4rem;
+}
+
+/* The papers publish a wordmark rather than a glyph. The card is only three
+   grid columns wide, so the marks are sized against the chip row itself: the
+   two of them, their padding, borders and gap cost ~8.4x the mark height plus
+   45px, which leaves the expression below. */
+.wordmark {
+	width: auto;
+	height: min(1.35rem, calc(11cqi - 6px));
+	fill: currentColor;
 }
 
 .channel-group {
