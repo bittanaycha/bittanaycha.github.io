@@ -7,7 +7,8 @@ with the day's almanac laid on it as separate blue cards; a pixel ship sails to
 whichever card the pointer is over.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
-`dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
+`dither`, `running`, `google`, `wikipedia`, `guardian`, `libé`, units) and the
+marathon plan's own data.
 
 ## Develop
 
@@ -148,6 +149,10 @@ gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workfl
   the accent inside a card is yellow `#f4c95d` and red `#d9432f`.
 - Labels are sentence case ("Moon", not "MOON"). `.eyebrow.plain` opts out for
   numbers and units ("26 weeks", "mm:ss or h:mm:ss").
+- The launcher's square chips hold brand glyphs. The Guardian and Libération have
+  no glyph — their identity is the masthead — so those two are word chips
+  (`.channel--word`) in the nav's mono. They sit in one `.channel-group`, so a
+  narrow card drops both to a second line instead of stranding `Libé` alone.
 - The deck is full width with an asymmetric gutter (narrow left, wide right), so
   the composition leans and the sea stays open on the right. Both pages place
   every island on a 12-column chart with explicit column and row numbers rather

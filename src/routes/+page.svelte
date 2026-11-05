@@ -196,6 +196,34 @@
 				/>
 			</svg>
 		</a>
+
+		<!-- The papers publish a masthead, not a glyph, so these two chips take
+		     the word, set in the nav's mono. They are one group: a narrow card
+		     moves both to a second line rather than stranding `libé` under a
+		     full row. -->
+		<div class="channel-group">
+			<a
+				class="channel channel--word"
+				href="https://www.theguardian.com/"
+				target="_blank"
+				rel="noreferrer"
+				title="The Guardian"
+				aria-label="The Guardian"
+			>
+				<span aria-hidden="true">guardian</span>
+			</a>
+
+			<a
+				class="channel channel--word"
+				href="https://www.liberation.fr/"
+				target="_blank"
+				rel="noreferrer"
+				title="Libération"
+				aria-label="Libération"
+			>
+				<span aria-hidden="true">libé</span>
+			</a>
+		</div>
 	</section>
 
 	{#if almanacData}
