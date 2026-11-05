@@ -419,12 +419,9 @@ main {
    ========================================================================= */
 .channels {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
 	gap: 1rem;
-	row-gap: 0.55rem;
 	padding: 0.9rem 0 0.2rem;
-	container-type: inline-size;
 }
 
 .channel {
@@ -449,28 +446,6 @@ main {
 .channel:focus-visible {
 	outline: 1px solid var(--accent);
 	outline-offset: 2px;
-}
-
-/* A masthead chip is as wide as its wordmark; the square stays for the glyphs. */
-.channel--mark {
-	width: auto;
-	padding-inline: 0.4rem;
-}
-
-/* The papers publish a wordmark rather than a glyph. The card is only three
-   grid columns wide, so the marks are sized against the chip row itself: the
-   two of them, their padding, borders and gap cost ~8.4x the mark height plus
-   45px, which leaves the expression below. */
-.wordmark {
-	width: auto;
-	height: min(1.35rem, calc(11cqi - 6px));
-	fill: currentColor;
-}
-
-.channel-group {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1rem;
 }
 
 .mark {
@@ -1351,7 +1326,6 @@ main {
 	.home > .channels {
 		width: 58%;
 		align-self: flex-end;
-		justify-content: flex-end;
 	}
 
 	.home > .sun-group > .sun-tag {
