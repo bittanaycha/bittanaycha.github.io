@@ -1,42 +1,75 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { anchors, blocks, languages, seasons, updated } from '#lib/seasons';
-	import { isoDay, shortDate } from '#lib/format';
+	import Ring from '#lib/components/Ring.svelte';
+	import { dotted, isoDay, shortDate } from '#lib/format';
+	import { KINDS, SLOTS, type Assignment } from '#lib/plan-rules';
 
-	const DOMAINS = ['running', 'music', 'language', 'study'] as const;
+	let { data } = $props();
 
 	const DAY = 86_400_000;
-	const at = (iso: string) => new Date(`${iso}T12:00:00`).getTime();
+	const at = (iso: string) => new Date(`${iso}T12:00:00Z`).getTime();
 	const span = (from: string, to: string) => Math.round((at(to) - at(from)) / DAY);
 
-	// The build date is the fallback, so the prerendered page shows the day it
-	// was built. Hydration replaces it with the real day.
-	const BUILT = isoDay(new Date());
-	let today = $state(BUILT);
+	// The server's day is the fallback; hydration refreshes it in case the page
+	// was cached across midnight.
+	// svelte-ignore state_referenced_locally
+	let today = $state(data.today);
 
-	onMount(() => {
-		today = isoDay(new Date());
+	$effect(() => {
+		const now = isoDay(new Date());
+		if (now !== today) today = now;
 	});
 
-	const first = blocks.map((block) => block.from).sort()[0];
-	const last = blocks.map((block) => block.to).sort().at(-1)!;
-	const total = span(first, last) + 1;
+	const blocks = $derived(data.ready ? data.blocks : []);
+	const assignments = $derived(data.ready ? data.assignments : []);
+	const languages = $derived(data.ready ? data.languages : []);
 
-	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
-	const season = $derived(seasons.find((s) => today >= s.from && today < s.to) ?? seasons[0]);
+	/** The window the strip covers: from the first start to the last end. */
+	const first = $derived(blocks.map((block) => block.from).sort()[0] ?? today);
+	const last = $derived(blocks.map((block) => block.to).sort().at(-1) ?? today);
+	const total = $derived(span(first, last) + 1);
 
-	/** Days until the next block starts or ends, wherever that is. */
-	const nextChange = $derived(
-		Math.min(
-			...blocks
-				.flatMap((block) => [block.from, block.to])
-				.filter((date) => date > today)
-				.map((date) => span(today, date))
-		)
+	const season = $derived(
+		data.ready
+			? (data.seasons.find((entry) => entry.from <= today && today < entry.to) ?? data.seasons[0])
+			: null
 	);
 
-	function lane(domain: (typeof DOMAINS)[number]) {
-		return blocks.filter((block) => block.domain === domain);
+	/** Slots held today, by language id. Anything unassigned is tertiary. */
+	const holding = $derived.by(() => {
+		const map = new Map<string, Assignment>();
+		for (const item of assignments) {
+			if (item.from <= today && today <= item.to) map.set(item.language, item);
+		}
+		return map;
+	});
+
+	const slotOf = (id: string) => holding.get(id)?.slot ?? 'tertiary';
+
+	const bySlot = $derived.by(() => {
+		const out: Record<string, { language: string; name: string; assignment: Assignment | null }[]> =
+			{ primary: [], secondary: [], tertiary: [] };
+		for (const language of languages) {
+			const assignment = holding.get(language.id) ?? null;
+			out[assignment?.slot ?? 'tertiary'].push({
+				language: language.id,
+				name: language.name,
+				assignment
+			});
+		}
+		return out;
+	});
+
+	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
+
+	const nextChange = $derived.by(() => {
+		const dates = [...blocks, ...assignments]
+			.flatMap((row) => [row.from, row.to])
+			.filter((date) => date > today);
+		return dates.length ? Math.min(...dates.map((date) => span(today, date))) : 0;
+	});
+
+	function lane(kind: string) {
+		return blocks.filter((block) => block.kind === kind);
 	}
 
 	/** Left edge and width of a date range on the strip, as percentages. */
@@ -46,36 +79,16 @@
 		return `left: ${(a / total) * 100}%; width: ${(Math.max(b - a, 0) / total) * 100}%`;
 	}
 
-	function role(id: string) {
-		const active = blocks.find(
-			(block) =>
-				block.domain === 'language' &&
-				block.language === id &&
-				block.from <= today &&
-				today <= block.to
-		);
-		if (active) return { role: 'active' as const, dose: active.dose, target: active.target };
-
-		const anchor = anchors.find(
-			(item) => item.language === id && item.from <= today && today <= item.to
-		);
-		if (anchor) return { role: 'anchor' as const, dose: anchor.dose, target: anchor.target };
-
-		const next = blocks
-			.filter((block) => block.domain === 'language' && block.language === id && block.from > today)
-			.sort((a, b) => (a.from < b.from ? -1 : 1))[0];
-
-		return {
-			role: 'dormant' as const,
-			dose: '',
-			target: next ? `opens ${shortDate(next.from)}` : '-'
-		};
-	}
-
-	const roster = $derived(languages.map((language) => ({ ...language, ...role(language.id) })));
-
-	const rank = { active: 0, anchor: 1, dormant: 2 } as const;
-	const ordered = $derived([...roster].sort((a, b) => rank[a.role] - rank[b.role]));
+	/** The assignments as bars on the language lane, so the slot changes show. */
+	const languageBars = $derived(
+		assignments.map((item) => ({
+			id: `${item.language}-${item.from}`,
+			slot: item.slot,
+			name: languages.find((language) => language.id === item.language)?.name ?? item.language,
+			from: item.from,
+			to: item.to
+		}))
+	);
 
 	const vaultLink = (path: string) =>
 		`obsidian://open?vault=Yggdrasil&file=${encodeURIComponent(path)}`;
@@ -85,7 +98,7 @@
 	<title>seasons - bittanaycha</title>
 	<meta
 		name="description"
-		content="Running, music, languages and study as blocks with a set length in weeks, side by side."
+		content="Six languages in three slots, and the seasons for running, music and study."
 	/>
 </svelte:head>
 
@@ -93,21 +106,81 @@
 	<header class="now">
 		<div>
 			<p class="tag">seasons</p>
-			<h1>{season.name.toLowerCase()}</h1>
+			<h1>{season ? season.name.toLowerCase() : 'plan'}</h1>
 			<p class="line">
-				{shortDate(today)} - {live.length} blocks live - next change in {nextChange} days
+				{shortDate(today)} - {live.length} season{live.length === 1 ? '' : 's'} live - next change in
+				{nextChange} days
 			</p>
 		</div>
 		<div class="legend">
-			{#each DOMAINS as domain (domain)}
-				<span class="tag">{domain}</span>
+			{#each KINDS as kind (kind)}
+				<span class="tag">{kind}</span>
 			{/each}
+			<span class="tag">language</span>
 		</div>
 	</header>
 
+	<section class="ring-card">
+		{#if data.ready}
+			<Ring
+				from={data.window.from}
+				to={data.window.to}
+				seasons={data.seasons}
+				blocks={[
+					...blocks.map((block) => ({ id: block.id, kind: block.kind, title: block.title, from: block.from, to: block.to })),
+					...languageBars
+						.filter((bar) => bar.slot !== 'tertiary')
+						.map((bar) => ({
+							id: bar.id,
+							kind: bar.slot === 'secondary' ? 'language-2' : 'language',
+							title: bar.name,
+							from: bar.from,
+							to: bar.to
+						}))
+				]}
+				{today}
+				marks={data.marks}
+			/>
+		{/if}
+		<div class="ring-note">
+			{#if data.ready && data.ko}
+				<p class="tag">this kō</p>
+				<p class="ko">{data.ko.name}</p>
+				<p class="dim">{data.ko.detail}</p>
+			{/if}
+			{#if data.ready}
+				<p class="dim">
+					{dotted(data.window.from)} to {dotted(data.window.to)} - 24 sekki and 72 kō on the rim
+				</p>
+			{/if}
+		</div>
+	</section>
+
+	<section class="slots">
+		{#each SLOTS as slot (slot)}
+			<div class="slot" class:slot-dim={slot === 'tertiary'}>
+				<p class="tag">{slot}</p>
+				{#each bySlot[slot] as held (held.language)}
+					<p class="slot-name">{held.name}</p>
+					{#if held.assignment}
+						<p class="dim">{held.assignment.dose || '-'}</p>
+						<p class="dim">{held.assignment.target || '-'}</p>
+						<p class="dim slot-dates">
+							{shortDate(held.assignment.from)} - {shortDate(held.assignment.to)}
+						</p>
+					{:else}
+						<p class="dim">maintenance only</p>
+					{/if}
+				{:else}
+					<p class="slot-name dim">-</p>
+				{/each}
+			</div>
+		{/each}
+	</section>
+
 	<section class="strip">
 		<div class="axis">
-			{#each seasons as entry (entry.id)}
+			{#each data.ready ? data.seasons : [] as entry (entry.from)}
 				{#if at(entry.to) > at(first) && at(entry.from) < at(last)}
 					<div class="axis-mark" style={place(entry.from, entry.to)}>
 						<span>{entry.name.toLowerCase()}</span>
@@ -116,10 +189,10 @@
 			{/each}
 		</div>
 
-		{#each DOMAINS as domain (domain)}
-			{@const laneBlocks = lane(domain)}
+		{#each KINDS as kind (kind)}
+			{@const laneBlocks = lane(kind)}
 			<div class="lane" class:empty={laneBlocks.length === 0}>
-				<p class="lane-name">{domain}</p>
+				<p class="lane-name">{kind}</p>
 				<div class="rail">
 					{#each laneBlocks as block (block.id)}
 						<div
@@ -134,6 +207,23 @@
 				</div>
 			</div>
 		{/each}
+
+		<div class="lane" class:empty={languageBars.length === 0}>
+			<p class="lane-name">language</p>
+			<div class="rail">
+				{#each languageBars as bar (bar.id)}
+					<div
+						class="bar bar-language"
+						class:bar-live={bar.from <= today && today <= bar.to}
+						class:bar-tertiary={bar.slot === 'tertiary'}
+						style={place(bar.from, bar.to)}
+					>
+						<span>{bar.name}</span>
+						<span class="bar-weeks">{bar.slot}</span>
+					</div>
+				{/each}
+			</div>
+		</div>
 	</section>
 
 	<section class="panel">
@@ -141,10 +231,10 @@
 		<ul class="live">
 			{#each live as block (block.id)}
 				<li>
-					<span class="code">{block.domain}</span>
+					<span class="code">{block.kind}</span>
 					<span class="name">{block.title}</span>
 					<span class="dim">{shortDate(block.from)} - {shortDate(block.to)}</span>
-					<span class="dim">{span(today, block.to) + 1} days left of {block.weeks} weeks</span>
+					<span class="dim">day {span(block.from, today) + 1} of {block.weeks * 7}</span>
 					{#if block.dose}<span class="dim">{block.dose}</span>{/if}
 				</li>
 			{/each}
@@ -152,7 +242,7 @@
 	</section>
 
 	<section class="panel">
-		<p class="tag">languages - one active at a time</p>
+		<p class="tag">languages - one primary, one secondary, the rest maintenance</p>
 		<table>
 			<thead>
 				<tr>
@@ -166,15 +256,16 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each ordered as language (language.id)}
-					<tr class:off={language.role === 'dormant'}>
+				{#each languages as language (language.id)}
+					{@const held = holding.get(language.id) ?? null}
+					<tr class:off={!held || held.slot === 'tertiary'}>
 						<td class="cell-name">{language.name}</td>
 						<td>{language.level}</td>
 						<td>{language.aim}</td>
 						<td>{language.stage}</td>
-						<td class="dim">{language.role}</td>
-						<td>{language.dose || '-'}</td>
-						<td>{language.target}</td>
+						<td class="dim">{held?.slot ?? 'tertiary'}</td>
+						<td>{held?.dose || '-'}</td>
+						<td>{held?.target || '-'}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -184,11 +275,16 @@
 	<section class="panel">
 		<p class="tag">how this is set</p>
 		<p class="note">
-			A block is a title, a start date and a length: <code>weeks</code> in the plan, four to the
-			month. Running, music, one language and one study subject can all be going at once. Two
-			blocks of the same kind cannot overlap, and only one language is ever active. Give a subject
-			a start date and a length and it appears here. Everything lives in
-			<code>seasons/plan.json</code>, then <code>npm run sync</code>.
+			Six languages, three slots: one primary, one secondary, the rest maintenance. The slots carry
+			dates, so the year can be planned. Running, music and study are seasons instead: a kind, a
+			name and two dates, as long or as short as the thing is. Start and end can be set on the ring,
+			or snapped to a quarter day, a fire festival, a meteorological season or any of the 24 sekki
+			and 72 kō.
+			{#if data.editor}
+				<a href="/seasons/edit">Edit the plan</a>.
+			{:else}
+				The plan is yours to read.
+			{/if}
 		</p>
 		<ul class="links">
 			<li><a href={vaultLink('Seasons/Seasons Index.md')}>seasons index</a></li>
@@ -196,7 +292,7 @@
 			<li><a href={vaultLink('Seasons/Reviews.md')}>reviews</a></li>
 			<li><a href={vaultLink('Knowledge/Languages/Language Goals and Overview.md')}>goals</a></li>
 		</ul>
-		<p class="tag stamp">synced {shortDate(updated)}</p>
+		<p class="tag stamp">synced {shortDate(data.updated ?? today)}</p>
 	</section>
 </main>
 
@@ -289,6 +385,27 @@
 
 	.dim {
 		color: var(--dim);
+	}
+
+	.ring-card {
+		display: grid;
+		grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+		align-items: center;
+		column-gap: clamp(1rem, 3vw, 2.5rem);
+		border-bottom: 1px solid var(--rule);
+		padding-bottom: 1.6rem;
+		margin-bottom: 1.6rem;
+	}
+
+	.ring-note {
+		align-self: end;
+		padding-bottom: 1rem;
+	}
+
+	.ring-note .ko {
+		font-size: clamp(1.4rem, 2.4vw, 2rem);
+		letter-spacing: 0.06em;
+		margin: 0.2rem 0 0.1rem;
 	}
 
 	.strip {
@@ -449,7 +566,7 @@
 		color: var(--dim);
 	}
 
-	code {
+	:global(code) {
 		font-family: inherit;
 		color: var(--ink);
 	}
@@ -496,6 +613,16 @@
 			margin-top: 1rem;
 		}
 
+		.ring-card {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 1.2rem;
+		}
+
+		.slots {
+			grid-template-columns: minmax(0, 1fr);
+			row-gap: 1.2rem;
+		}
+
 		.lane {
 			grid-template-columns: 1fr;
 			gap: 0.3rem;
@@ -527,4 +654,48 @@
 			display: none;
 		}
 	}
+	.slots {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(1rem, 2.5vw, 2rem);
+		border-bottom: 1px solid var(--rule);
+		padding-bottom: 1.5rem;
+	}
+
+	.slot p {
+		margin: 0.1rem 0;
+	}
+
+	.slot-name {
+		font-size: 1.2rem;
+		letter-spacing: 0.06em;
+		margin-top: 0.35rem !important;
+	}
+
+	.slot-dim {
+		opacity: 0.55;
+	}
+
+	.slot-dates {
+		margin-top: 0.35rem !important;
+	}
+
+	.bar-language {
+		border-color: rgb(127 166 220 / 0.7);
+	}
+
+	.bar {
+		overflow: hidden;
+	}
+
+	.bar span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.bar-tertiary {
+		opacity: 0.4;
+	}
+
 </style>

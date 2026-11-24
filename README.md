@@ -1,8 +1,9 @@
 # homepage
 
-A personal homepage, a marathon training page, a language and season wheel and a
-dithering studio. SvelteKit, fully prerendered, served as static files from GitHub
-Pages at <https://bittanaycha.github.io>. The page is printed on a photograph of leaves,
+A personal homepage, a marathon training page, a year of blocks and a dithering
+studio. SvelteKit on Cloudflare Workers, at <https://bittanaycha.github.io>: every
+route except the season plan is prerendered, and the plan is read from D1 per
+request. The page is printed on a photograph of leaves,
 with the day's almanac laid on it as separate blue cards; a pixel ship sails to
 whichever card the pointer is over.
 
@@ -19,7 +20,14 @@ npm run build      # prerenders into build/
 npm run preview    # serve the production build
 npm run check      # type + a11y diagnostics
 npm run sync       # regenerate the day table and run log from the vault
+npm run pull       # copy the plan out of the database into the vault
+npm run push       # send a vault edit back to the database
 ```
+
+`npm run dev` needs the D1 binding, which `vite dev` emulates from
+`wrangler.jsonc`; copy `.dev.vars.example` to `.dev.vars` and put the same
+passphrase there. Migrations run against the local database with
+`npx wrangler d1 migrations apply seasons --local`.
 
 ## Where things live
 
@@ -35,14 +43,20 @@ npm run sync       # regenerate the day table and run log from the vault
 | `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
-| `src/routes/seasons/+page.svelte` | Blocks as bars: running, music, languages and study, and the language roles |
-| `src/lib/seasons.ts` | The blocks, the languages and the anchors, from `Seasons/plan.json`. Generated — see below |
+| `src/routes/seasons/+page.svelte` | The ring, the bars, the language roles |
+| `src/routes/seasons/edit/+page.svelte` | The editor: pick the dates on the ring, set the lengths, save to the database |
+| `src/lib/components/Ring.svelte` | The year as a circle: seasons on the rim, blocks as concentric arcs, today as a hand |
+| `src/lib/calendar.ts` | Quarter days from the sun's longitude, the Celtic and meteorological dates, sekki and kō |
+| `src/lib/sekki.ts` | The 24 sekki and the 72 kō: names, romaji, glosses and solar longitudes |
+| `src/lib/plan-rules.ts` | What a valid plan is: kinds, slots, one primary and one secondary at a time |
+| `src/lib/server/` | Drizzle schema, D1 reads and writes, the passphrase session |
+| `scripts/plan-sync.mjs` | `npm run pull` and `npm run push`: the plan between the vault and the database |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
 | `src/lib/days.ts` | One row per plan day, from the week notes. Generated — see below |
 | `src/lib/log.ts` | Every run in the training log. Generated — see below |
 | `src/lib/sun.ts` | NOAA sunrise/sunset and the moon phase behind the almanac |
 | `src/lib/pace.ts` | VDOT, threshold pace and rep ranges |
-| `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts`, `log.ts` and `seasons.ts` |
+| `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts` and `log.ts` |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
 | `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
@@ -100,13 +114,10 @@ npm run sync
 ```
 
 That reads `plan.json`, the day table in each `Weeks/Week NN.md`, and
-`Training Log.md`, then writes `src/lib/days.ts` and `src/lib/log.ts`. It also
-reads `Seasons/plan.json` and writes `src/lib/seasons.ts`. Set `YGDRASIL_VAULT`
+`Training Log.md`, then writes `src/lib/days.ts` and `src/lib/log.ts`. Set `YGDRASIL_VAULT`
 to read a different vault. The script exits non-zero on a weekday that does not
-match its date, a plan week with no note, a run dated outside the plan weeks, a
-season whose role names an unknown language, more than one active language or
-more than two anchors, or two seasons that overlap, so a broken table fails
-instead of quietly dropping rows.
+match its date, a plan week with no note, or a run dated outside the plan weeks,
+so a broken table fails instead of quietly dropping rows.
 
 The training log is the source of truth: week 3 planned 28.0 km and logged 4.3 km,
 and the bars, the table and the totals all take the logged number from
@@ -118,23 +129,73 @@ than a copy of it.
 
 ### The seasons
 
-`~/Vaults/Yggdrasil/Seasons/` holds the plan: `plan.json` (blocks, languages,
-anchors), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
+`~/Vaults/Yggdrasil/Seasons/` holds the plan: `plan.json` (a mirror of the
+database), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
 `Reviews.md` (the Sunday log).
 
-A **block** is a title, a start date and a number of weeks. Blocks of different
-kinds run at the same time — running, music, one language, one study subject —
-and two blocks of the same kind may not overlap. Only one language is ever
-active; the rest are anchors (a fixed small dose) or dormant. The end date is
-never stored: `to` is `from + weeks * 7 - 1`, so a block is one number to change.
+Two shapes, because the year holds two kinds of thing. The six languages are a
+fixed set with three slots — one primary, one secondary, everything else tertiary
+— and what changes is which language holds which slot, over dates. Everything
+else (running, music, study) is a season: a kind, a name, two dates, a dose.
 
-The four seasons are only the backdrop on the strip, named Spring, Summer, Autumn
-and Winter. Their boundaries are the astronomical instants for `Europe/Paris`,
-not the calendar date in general: 21 Dec 2026 at 21:20 local, 20 Mar 2027 at
-21:32, and so on.
+The **database owns the plan**. `/seasons` reads it per request, `/seasons/edit`
+writes it, and `plan.json` follows along. Cloudflare D1 holds four tables:
+`languages`, `assignments`, `blocks` and `meta`. The browser proves it may write with
+a cookie signed by `PLAN_SECRET` after `POST /api/login` matches
+`PLAN_PASSPHRASE`; a script proves it with an `x-plan-key` header instead.
+
+```bash
+npm run pull   # database -> Seasons/plan.json
+npm run push   # Seasons/plan.json -> database
+```
+
+Both directions keep a receipt in `Seasons/.plan-sync.json`: the hash of the file
+as it was pulled and the `updated` stamp the database had. If the file changed
+*and* the database changed since that receipt, `push` refuses and asks for a pull
+first, because choosing a winner silently would lose an edit.
+
+`PLAN_URL` and `PLAN_PASSPHRASE` come from `.env` (see `.env.example`); the passphrase
+must match the Worker's secret.
+
+### The ring and the dates
+
+`src/lib/calendar.ts` computes the quarter days from the sun's apparent
+longitude (Meeus, low precision — the instants land within a minute or so of the
+published ones) and converts them to local dates in `Europe/Paris`. The four
+season bands therefore start on the real equinox and solstice instants, not on 1
+March or 21 December.
+
+Four calendars are available when picking a date:
+
+- **astronomical** — equinoxes and solstices
+- **meteorological** — 1 March, 1 June, 1 September, 1 December
+- **Celtic** — Samhain, Imbolc, Beltane, Lughnasadh on the folk dates 1 Nov, 1 Feb,
+  1 May, 1 Aug, plus the four quarter days
+- **sekki and kō** — the 24 Japanese solar terms and the 72 micro-seasons, from
+  315° in 15° and 5° steps
+
+Sekki names in `src/lib/sekki.ts` follow the 略本暦 calendar (Japanese Wikipedia,
+Nippon.com glosses, NAOJ 暦Wiki), which is what `src/lib/calendar.ts` computes.
 
 `/seasons` sets the Nothing 5x7 dot font (`static/fonts/nothing-font-5x7.otf`,
 from fontstruct.com, installed by hand). Its cmap covers ASCII printable only, so
 every string on that page has to be ASCII: a hyphen where an en dash would read
 better, `-` for a middot, no arrows. `dateRange()` from `#lib/format` returns an
 en dash and must not be used there.
+
+### Deploying
+
+`/seasons` needs the database on every request, so the site runs as a Worker
+rather than a static bundle: `@sveltejs/adapter-cloudflare` builds it and
+`wrangler.jsonc` binds `ASSETS` and `DB`.
+
+```bash
+npx wrangler d1 create seasons          # prints the database_id for wrangler.jsonc
+npx wrangler d1 migrations apply seasons --remote
+npx wrangler secret put PLAN_PASSPHRASE
+npx wrangler secret put PLAN_SECRET
+npm run build && npx wrangler deploy
+```
+
+The other routes (`/`, `/dither`, `/running`) are still prerendered; only
+`/seasons` and the `/api` routes run per request.

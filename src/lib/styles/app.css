@@ -32,6 +32,12 @@
 	--accent-deep: #d9432f;
 	--ice: #cfe0ff;
 
+	/* The seasons have their own four colours; the kinds their own four. */
+	--spring: #7fb86a;
+	--summer: #e0b23c;
+	--autumn: #d97a45;
+	--winter: #7f9fd6;
+
 	--paper: var(--card);
 	--paper-deep: var(--card-deep);
 	--paper-light: var(--card-ink);

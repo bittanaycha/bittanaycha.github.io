@@ -1,0 +1,116 @@
+/**
+ * The Japanese year in 72 parts.
+ *
+ * The 24 sekki (節気) split the sun's path into 15 degree steps; the 72 kō
+ * (七十二候) split each of those into three, at 5 degree steps. These are solar
+ * longitudes, not fixed dates, so each one drifts about a day between years.
+ *
+ * Names follow the 略本暦 list used by Japanese almanacs since 1874, the one
+ * that starts at 立春. Readings are the common Japanese ones (see the notes in
+ * the commit that added this file); romanisation is Hepburn with macrons.
+ */
+
+export type Sekki = { name: string; romaji: string; en: string; longitude: number };
+export type Ko = Sekki & { n: number; sekki: string };
+
+export const SEKKI: Sekki[] = [
+	{ name: "立春", romaji: "risshun", en: "start of spring", longitude: 315 },
+	{ name: "雨水", romaji: "usui", en: "rain water", longitude: 330 },
+	{ name: "啓蟄", romaji: "keichitsu", en: "insects awaken", longitude: 345 },
+	{ name: "春分", romaji: "shunbun", en: "spring equinox", longitude: 0 },
+	{ name: "清明", romaji: "seimei", en: "clear and bright", longitude: 15 },
+	{ name: "穀雨", romaji: "kokuu", en: "grain rain", longitude: 30 },
+	{ name: "立夏", romaji: "rikka", en: "start of summer", longitude: 45 },
+	{ name: "小満", romaji: "shōman", en: "lesser ripening", longitude: 60 },
+	{ name: "芒種", romaji: "bōshu", en: "grain in ear", longitude: 75 },
+	{ name: "夏至", romaji: "geshi", en: "summer solstice", longitude: 90 },
+	{ name: "小暑", romaji: "shōsho", en: "lesser heat", longitude: 105 },
+	{ name: "大暑", romaji: "taisho", en: "greater heat", longitude: 120 },
+	{ name: "立秋", romaji: "risshū", en: "start of autumn", longitude: 135 },
+	{ name: "処暑", romaji: "shosho", en: "end of heat", longitude: 150 },
+	{ name: "白露", romaji: "hakuro", en: "white dew", longitude: 165 },
+	{ name: "秋分", romaji: "shūbun", en: "autumn equinox", longitude: 180 },
+	{ name: "寒露", romaji: "kanro", en: "cold dew", longitude: 195 },
+	{ name: "霜降", romaji: "sōkō", en: "frost descends", longitude: 210 },
+	{ name: "立冬", romaji: "rittō", en: "start of winter", longitude: 225 },
+	{ name: "小雪", romaji: "shōsetsu", en: "lesser snow", longitude: 240 },
+	{ name: "大雪", romaji: "taisetsu", en: "greater snow", longitude: 255 },
+	{ name: "冬至", romaji: "tōji", en: "winter solstice", longitude: 270 },
+	{ name: "小寒", romaji: "shōkan", en: "lesser cold", longitude: 285 },
+	{ name: "大寒", romaji: "daikan", en: "greater cold", longitude: 300 }
+];
+
+export const KO: Ko[] = [
+	{ n: 1, sekki: "立春", name: "東風解凍", romaji: "harukaze kōri o toku", en: "east wind melts the ice", longitude: 315 },
+	{ n: 2, sekki: "立春", name: "黄鶯睍睆", romaji: "uguisu naku", en: "bush warblers start to sing", longitude: 320 },
+	{ n: 3, sekki: "立春", name: "魚上氷", romaji: "uo kōri o izuru", en: "fish emerge from the ice", longitude: 325 },
+	{ n: 4, sekki: "雨水", name: "土脉潤起", romaji: "tsuchi no shō uruoi okoru", en: "rain moistens the soil", longitude: 330 },
+	{ n: 5, sekki: "雨水", name: "霞始靆", romaji: "kasumi hajimete tanabiku", en: "mist starts to linger", longitude: 335 },
+	{ n: 6, sekki: "雨水", name: "草木萌動", romaji: "sōmoku mebae izuru", en: "grass sprouts, trees bud", longitude: 340 },
+	{ n: 7, sekki: "啓蟄", name: "蟄虫啓戸", romaji: "sugomori mushi to o hiraku", en: "hibernating insects surface", longitude: 345 },
+	{ n: 8, sekki: "啓蟄", name: "桃始笑", romaji: "momo hajimete saku", en: "first peach blossoms", longitude: 350 },
+	{ n: 9, sekki: "啓蟄", name: "菜虫化蝶", romaji: "namushi chō to naru", en: "caterpillars become butterflies", longitude: 355 },
+	{ n: 10, sekki: "春分", name: "雀始巣", romaji: "suzume hajimete sukuu", en: "sparrows start to nest", longitude: 0 },
+	{ n: 11, sekki: "春分", name: "桜始開", romaji: "sakura hajimete hiraku", en: "first cherry blossoms", longitude: 5 },
+	{ n: 12, sekki: "春分", name: "雷乃発声", romaji: "kaminari sunawachi koe o hassu", en: "distant thunder", longitude: 10 },
+	{ n: 13, sekki: "清明", name: "玄鳥至", romaji: "tsubame kitaru", en: "swallows return", longitude: 15 },
+	{ n: 14, sekki: "清明", name: "鴻雁北", romaji: "kōgan kita e kaeru", en: "wild geese fly north", longitude: 20 },
+	{ n: 15, sekki: "清明", name: "虹始見", romaji: "niji hajimete arawaru", en: "first rainbows", longitude: 25 },
+	{ n: 16, sekki: "穀雨", name: "葭始生", romaji: "ashi hajimete shōzu", en: "first reeds sprout", longitude: 30 },
+	{ n: 17, sekki: "穀雨", name: "霜止出苗", romaji: "shimo yande nae izuru", en: "last frost, rice seedlings grow", longitude: 35 },
+	{ n: 18, sekki: "穀雨", name: "牡丹華", romaji: "botan hana saku", en: "peonies bloom", longitude: 40 },
+	{ n: 19, sekki: "立夏", name: "蛙始鳴", romaji: "kawazu hajimete naku", en: "frogs start to sing", longitude: 45 },
+	{ n: 20, sekki: "立夏", name: "蚯蚓出", romaji: "mimizu izuru", en: "earthworms surface", longitude: 50 },
+	{ n: 21, sekki: "立夏", name: "竹笋生", romaji: "takenoko shōzu", en: "bamboo shoots sprout", longitude: 55 },
+	{ n: 22, sekki: "小満", name: "蚕起食桑", romaji: "kaiko okite kuwa o hamu", en: "silkworms start eating mulberry leaves", longitude: 60 },
+	{ n: 23, sekki: "小満", name: "紅花栄", romaji: "benibana sakau", en: "safflowers bloom", longitude: 65 },
+	{ n: 24, sekki: "小満", name: "麦秋至", romaji: "mugi no toki itaru", en: "wheat ripens for harvest", longitude: 70 },
+	{ n: 25, sekki: "芒種", name: "螳螂生", romaji: "kamakiri shōzu", en: "praying mantises hatch", longitude: 75 },
+	{ n: 26, sekki: "芒種", name: "腐草為蛍", romaji: "kusaretaru kusa hotaru to naru", en: "rotten grass becomes fireflies", longitude: 80 },
+	{ n: 27, sekki: "芒種", name: "梅子黄", romaji: "ume no mi kibamu", en: "plums turn yellow", longitude: 85 },
+	{ n: 28, sekki: "夏至", name: "乃東枯", romaji: "natsukarekusa karuru", en: "self-heal withers", longitude: 90 },
+	{ n: 29, sekki: "夏至", name: "菖蒲華", romaji: "ayame hana saku", en: "irises bloom", longitude: 95 },
+	{ n: 30, sekki: "夏至", name: "半夏生", romaji: "hange shōzu", en: "crow-dipper sprouts", longitude: 100 },
+	{ n: 31, sekki: "小暑", name: "温風至", romaji: "atsukaze itaru", en: "warm winds blow", longitude: 105 },
+	{ n: 32, sekki: "小暑", name: "蓮始開", romaji: "hasu hajimete hiraku", en: "first lotus blossoms", longitude: 110 },
+	{ n: 33, sekki: "小暑", name: "鷹乃学習", romaji: "taka sunawachi waza o nasu", en: "young hawks learn to fly", longitude: 115 },
+	{ n: 34, sekki: "大暑", name: "桐始結花", romaji: "kiri hajimete hana o musubu", en: "paulownia trees set buds", longitude: 120 },
+	{ n: 35, sekki: "大暑", name: "土潤溽暑", romaji: "tsuchi uruōte mushi atsushi", en: "earth is damp, air is muggy", longitude: 125 },
+	{ n: 36, sekki: "大暑", name: "大雨時行", romaji: "taiu tokidoki ni furu", en: "heavy rain falls at times", longitude: 130 },
+	{ n: 37, sekki: "立秋", name: "涼風至", romaji: "suzukaze itaru", en: "cool winds arrive", longitude: 135 },
+	{ n: 38, sekki: "立秋", name: "寒蝉鳴", romaji: "higurashi naku", en: "evening cicadas sing", longitude: 140 },
+	{ n: 39, sekki: "立秋", name: "蒙霧升降", romaji: "fukaki kiri matō", en: "thick fog descends", longitude: 145 },
+	{ n: 40, sekki: "処暑", name: "綿柎開", romaji: "wata no hanashibe hiraku", en: "cotton bolls open", longitude: 150 },
+	{ n: 41, sekki: "処暑", name: "天地始粛", romaji: "tenchi hajimete samushi", en: "the heat starts to subside", longitude: 155 },
+	{ n: 42, sekki: "処暑", name: "禾乃登", romaji: "kokumono sunawachi minoru", en: "rice ripens", longitude: 160 },
+	{ n: 43, sekki: "白露", name: "草露白", romaji: "kusa no tsuyu shiroshi", en: "dew glistens white on grass", longitude: 165 },
+	{ n: 44, sekki: "白露", name: "鶺鴒鳴", romaji: "sekirei naku", en: "wagtails sing", longitude: 170 },
+	{ n: 45, sekki: "白露", name: "玄鳥去", romaji: "tsubame saru", en: "swallows leave", longitude: 175 },
+	{ n: 46, sekki: "秋分", name: "雷乃収声", romaji: "kaminari sunawachi koe o osamu", en: "thunder ceases", longitude: 180 },
+	{ n: 47, sekki: "秋分", name: "蟄虫坏戸", romaji: "mushi kakurete to o fusagu", en: "insects hole up underground", longitude: 185 },
+	{ n: 48, sekki: "秋分", name: "水始涸", romaji: "mizu hajimete karu", en: "farmers drain the fields", longitude: 190 },
+	{ n: 49, sekki: "寒露", name: "鴻雁来", romaji: "kōgan kitaru", en: "wild geese return", longitude: 195 },
+	{ n: 50, sekki: "寒露", name: "菊花開", romaji: "kiku no hana hiraku", en: "chrysanthemums bloom", longitude: 200 },
+	{ n: 51, sekki: "寒露", name: "蟋蟀在戸", romaji: "kirigirisu to ni ari", en: "crickets chirp by the door", longitude: 205 },
+	{ n: 52, sekki: "霜降", name: "霜始降", romaji: "shimo hajimete furu", en: "first frost falls", longitude: 210 },
+	{ n: 53, sekki: "霜降", name: "霎時施", romaji: "kosame tokidoki furu", en: "light rain falls at times", longitude: 215 },
+	{ n: 54, sekki: "霜降", name: "楓蔦黄", romaji: "momiji tsuta kibamu", en: "maples and ivy turn yellow", longitude: 220 },
+	{ n: 55, sekki: "立冬", name: "山茶始開", romaji: "tsubaki hajimete hiraku", en: "camellias start to bloom", longitude: 225 },
+	{ n: 56, sekki: "立冬", name: "地始凍", romaji: "chi hajimete kōru", en: "the ground starts to freeze", longitude: 230 },
+	{ n: 57, sekki: "立冬", name: "金盞香", romaji: "kinsenka saku", en: "daffodils bloom", longitude: 235 },
+	{ n: 58, sekki: "小雪", name: "虹蔵不見", romaji: "niji kakurete miezu", en: "rainbows hide", longitude: 240 },
+	{ n: 59, sekki: "小雪", name: "朔風払葉", romaji: "kitakaze konoha o harau", en: "north wind strips the leaves", longitude: 245 },
+	{ n: 60, sekki: "小雪", name: "橘始黄", romaji: "tachibana hajimete kibamu", en: "tachibana citrus turns yellow", longitude: 250 },
+	{ n: 61, sekki: "大雪", name: "閉塞成冬", romaji: "sora samuku fuyu to naru", en: "cold sets in, winter begins", longitude: 255 },
+	{ n: 62, sekki: "大雪", name: "熊蟄穴", romaji: "kuma ana ni komoru", en: "bears withdraw into their dens", longitude: 260 },
+	{ n: 63, sekki: "大雪", name: "鱖魚群", romaji: "sake no uo muragaru", en: "salmon gather and swim upstream", longitude: 265 },
+	{ n: 64, sekki: "冬至", name: "乃東生", romaji: "natsukarekusa shōzu", en: "self-heal sprouts", longitude: 270 },
+	{ n: 65, sekki: "冬至", name: "麋角解", romaji: "ōshika no tsuno otsuru", en: "deer shed their antlers", longitude: 275 },
+	{ n: 66, sekki: "冬至", name: "雪下出麦", romaji: "yuki watarite mugi izuru", en: "wheat sprouts under the snow", longitude: 280 },
+	{ n: 67, sekki: "小寒", name: "芹乃栄", romaji: "seri sunawachi sakau", en: "parsley flourishes", longitude: 285 },
+	{ n: 68, sekki: "小寒", name: "水泉動", romaji: "shimizu atataka o fukumu", en: "springs thaw", longitude: 290 },
+	{ n: 69, sekki: "小寒", name: "雉始雊", romaji: "kiji hajimete naku", en: "pheasants start to call", longitude: 295 },
+	{ n: 70, sekki: "大寒", name: "款冬華", romaji: "fuki no hana saku", en: "butterburs bud", longitude: 300 },
+	{ n: 71, sekki: "大寒", name: "水沢腹堅", romaji: "sawamizu kōri tsumeru", en: "ice thickens on the streams", longitude: 305 },
+	{ n: 72, sekki: "大寒", name: "鶏始乳", romaji: "niwatori hajimete toya ni tsuku", en: "hens start laying eggs", longitude: 310 }
+];
