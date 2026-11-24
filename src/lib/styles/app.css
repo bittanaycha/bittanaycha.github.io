@@ -78,6 +78,27 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
+/* The seasons pages are their own sheet: black paper, no bark, no islands.
+   Everything here hangs off `.deck.dark`, so the rules cannot leak onto a route
+   that does not set it. */
+body:has(.deck.dark) {
+	background-color: #000;
+}
+
+body:has(.deck.dark) .sea,
+body:has(.deck.dark) .ship {
+	display: none;
+}
+
+.deck.dark {
+	position: relative;
+	z-index: 1;
+	min-height: 100dvh;
+	max-width: none;
+	padding: 1rem clamp(1rem, 4vw, 3rem) 0;
+	background: #000;
+}
+
 /* The sea: the leaf photograph, held down to a dark ground, under a field of
    chart dots and a wash of ultramarine. The islands float on top of it. */
 .sea {

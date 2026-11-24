@@ -437,22 +437,6 @@
 		font-display: block;
 	}
 
-	:global(html),
-	:global(body) {
-		background: #000;
-		background-image: none;
-	}
-
-	:global(.sea),
-	:global(.ship) {
-		display: none;
-	}
-
-	:global(.deck) {
-		max-width: none;
-		padding: 1rem clamp(1rem, 4vw, 3rem) 0;
-	}
-
 	main {
 		font-family: 'Nothing', ui-monospace, monospace;
 		color: #fff;

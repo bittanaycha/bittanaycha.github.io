@@ -309,28 +309,6 @@
 		font-display: block;
 	}
 
-	:global(html),
-	:global(body) {
-		background: #000;
-		background-image: none;
-	}
-
-	/* The bark and the paper margins are for the other pages. On this one the
-	   page itself is the sheet. */
-	:global(.sea) {
-		display: none;
-	}
-
-	:global(.deck) {
-		max-width: none;
-		padding: 1rem clamp(1rem, 4vw, 3rem) 0;
-	}
-
-	/* No islands on this page, so the ship has nothing to moor to. */
-	:global(.ship) {
-		display: none;
-	}
-
 	main {
 		--ink: #fff;
 		--dim: rgb(255 255 255 / 0.62);
@@ -393,7 +371,7 @@
 
 	.ring-card {
 		display: grid;
-		grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
 		align-items: center;
 		column-gap: clamp(1rem, 3vw, 2.5rem);
 		border-bottom: 1px solid var(--rule);

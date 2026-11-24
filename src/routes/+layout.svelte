@@ -14,6 +14,11 @@
 		'/dither': 'dither'
 	};
 	const title = $derived(titles[here] ?? 'index');
+
+	// The seasons pages are a black sheet, not the bark photograph. The class is
+	// on the deck so app.css can key the page background off it, instead of each
+	// page writing its own global rules that leak onto every other route.
+	const dark = $derived(here === '/seasons' || here === '/seasons/edit');
 </script>
 
 <svelte:head>
@@ -25,7 +30,7 @@
 
 <div class="sea" style:--photo={`url('${asset('background.png')}')`} aria-hidden="true"></div>
 
-<div class="deck">
+<div class="deck" class:dark>
 	<header class="site-header">
 		<div class="bar">
 			<nav class="nav" aria-label="Sections">

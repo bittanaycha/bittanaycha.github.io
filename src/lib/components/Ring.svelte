@@ -100,6 +100,17 @@
 
 	const live = (block: Block) => block.from <= today && today <= block.to;
 
+	/** The band under the cursor, or nothing. Drives the readout under the ring. */
+	let hover = $state<Block | null>(null);
+
+	const weeks = (block: Block) => Math.round((day(block.to) - day(block.from) + DAY) / (7 * DAY));
+
+	function shortDate(iso: string) {
+		return new Date(`${iso}T12:00:00Z`)
+			.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+			.toLowerCase();
+	}
+
 	const ko = $derived(marks.filter((mark) => mark.system === 'ko'));
 	const sekki = $derived(marks.filter((mark) => mark.system === 'sekki'));
 
@@ -126,11 +137,19 @@
 	aria-label={onpick ? 'The year: click a date to pick it' : 'The year in blocks and seasons'}
 	onclick={pick}
 >
-	<svg class="ring" class:pickable={Boolean(onpick)} viewBox="0 0 {SIZE} {SIZE}" aria-hidden="true">
+	<svg
+		class="ring"
+		class:pickable={Boolean(onpick)}
+		viewBox="-46 -46 512 512"
+		aria-hidden="true"
+		onmouseleave={() => (hover = null)}
+	>
 	<circle cx={C} cy={C} r={RIM} class="rim" />
 
 	{#each seasons as season (season.name + season.from)}
-		<path d={arc(BAND + 10, angle(season.from), angle(season.to))} stroke={tone(season.name)} class="season" />
+		<path d={arc(BAND + 10, angle(season.from), angle(season.to))} stroke={tone(season.name)} class="season">
+			<title>{season.name}: {shortDate(season.from)} to {shortDate(season.to)}</title>
+		</path>
 	{/each}
 
 	{#each sekki as mark (mark.id)}
@@ -153,10 +172,21 @@
 		/>
 	{/each}
 
+	{#each ko as mark (mark.id)}
+		{@const degrees = angle(mark.date)}
+		<g class="ko-label">
+			{#each [...mark.name] as glyph, index (index)}
+				{@const [x, y] = polar(RIM + 9 + index * 7.4, degrees)}
+				<text x={x} y={y} class="ko-glyph" text-anchor="middle" dominant-baseline="middle">{glyph}</text>
+			{/each}
+			<title>{mark.name} - {mark.detail}</title>
+		</g>
+	{/each}
+
 	{#each Array.from({ length: 12 }, (_, index) => index) as index (index)}
 		{@const date = new Date(new Date(start).getUTCFullYear(), index, 1).toISOString().slice(0, 10)}
 		{#if day(date) > start && day(date) < end}
-			{@const [x, y] = polar(MONTH + 18, angle(date))}
+			{@const [x, y] = polar(MONTH + 2, angle(date))}
 			<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
 				{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}
 			</text>
@@ -172,7 +202,11 @@
 				class="block"
 				class:live={live(block)}
 				class:dim={!live(block)}
-			/>
+				onmouseenter={() => (hover = block)}
+				role="presentation"
+			>
+				<title>{block.kind} - {block.title} - {shortDate(block.from)} to {shortDate(block.to)}, {weeks(block)} weeks</title>
+			</path>
 		{/if}
 	{/each}
 
@@ -186,6 +220,17 @@
 	<circle cx={polar(RIM + 4, angle(today))[0]} cy={polar(RIM + 4, angle(today))[1]} r="3.5" class="dot" />
 	<circle cx={C} cy={C} r="44" class="hub" />
 	</svg>
+
+	<p class="readout" aria-live="polite">
+		{#if hover}
+			<span class="readout-kind">{hover.kind}</span>
+			<span class="readout-title">{hover.title}</span>
+			<span class="readout-dates">{shortDate(hover.from)} to {shortDate(hover.to)}</span>
+			<span class="readout-weeks">{weeks(hover)} weeks</span>
+		{:else}
+			<span class="readout-hint">hover a band to read it</span>
+		{/if}
+	</p>
 </svelte:element>
 
 <style>
@@ -236,14 +281,38 @@
 
 	.month {
 		fill: var(--dim);
-		font-size: 9px;
+		font-size: 8px;
 		letter-spacing: 0.08em;
+	}
+
+	.ko-glyph {
+		fill: var(--ink);
+		fill-opacity: 0.34;
+		font-size: 7px;
+		font-family: 'Hiragino Mincho ProN', 'Songti SC', serif;
+	}
+
+	.ko-label:hover .ko-glyph {
+		fill-opacity: 1;
+	}
+
+	/* Seventy-two names need the room that a phone does not have. */
+	@media (max-width: 60rem) {
+		.ko-label {
+			display: none;
+		}
 	}
 
 	.block {
 		fill: none;
 		stroke-width: 9;
 		stroke-linecap: butt;
+		pointer-events: stroke;
+		cursor: default;
+	}
+
+	.block:hover {
+		stroke-width: 13;
 	}
 
 	.block.dim {
@@ -267,5 +336,31 @@
 	.hub {
 		fill: #000;
 		stroke: var(--rule);
+	}
+
+	.readout {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.1rem 0.7rem;
+		align-items: baseline;
+		margin: 0.6rem 0 0;
+		min-height: 1.4rem;
+		font-size: 0.68rem;
+		letter-spacing: 0.06em;
+		text-transform: lowercase;
+		color: var(--faint);
+	}
+
+	.readout-kind {
+		color: var(--dim);
+	}
+
+	.readout-title {
+		color: var(--ink);
+		text-transform: none;
+	}
+
+	.readout-hint {
+		color: var(--faint);
 	}
 </style>
