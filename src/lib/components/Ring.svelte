@@ -83,13 +83,29 @@
 		return `M ${x1} ${y1} A ${radius} ${radius} 0 ${sweep > 180 ? 1 : 0} 1 ${x2} ${y2}`;
 	}
 
-	/** A block clipped to the window, so something running past it still reads. */
-	function clipped(block: Block) {
-		const a = Math.max(day(block.from), start);
-		const b = Math.min(day(block.to), end);
-		if (b < a) return null;
-		return { a: angle(new Date(a).toISOString().slice(0, 10)), b: angle(new Date(b).toISOString().slice(0, 10)) };
+	/**
+	 * The spokes a block covers. Six months either side of today is what is read,
+	 * and anything running past the solstice carries round the seam rather than
+	 * stopping at it, so the solstice can stay pinned to the left.
+	 */
+	const near = $derived(start + (day(today) - start) - 182 * DAY);
+	const far = $derived(start + (day(today) - start) + 183 * DAY);
+
+	function spans(block: Block): { from: number; to: number }[] {
+		const a = Math.max(day(block.from), near);
+		const b = Math.min(day(block.to), far);
+		if (b < a) return [];
+		const length = Math.min(total, b - a);
+		const head = ((a - start) % total + total) % total;
+		const tail = head + length;
+		if (tail <= total) return [{ from: head, to: tail }];
+		return [
+			{ from: head, to: total },
+			{ from: 0, to: tail - total }
+		];
 	}
+
+	const degrees = (offset: number) => (offset / total) * 360 + 180;
 
 	const seasonTone: Record<string, string> = {
 		spring: 'var(--spring)',
@@ -301,12 +317,12 @@
 	{/each}
 
 	{#each blocks as block, index (block.id)}
-		{@const span = clipped(block)}
+		{@const pieces = spans(block)}
 		{@const radius = RAIL[block.kind] ?? radiusOf(index)}
 		{@const tone = RAIL_TONE[block.kind] ?? toneOf(index)}
-		{#if span}
+		{#each pieces as piece (piece.from)}
 			<path
-				d={arc(radius, span.a, span.b)}
+				d={arc(radius, degrees(piece.from), degrees(piece.to))}
 				stroke={tone}
 				class="block"
 				class:live={live(block)}
@@ -321,7 +337,7 @@
 				onmouseleave={hide}
 				role="presentation"
 			/>
-		{/if}
+		{/each}
 	{/each}
 
 	<line
