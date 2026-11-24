@@ -4,9 +4,9 @@
  * time.
  *
  * Two shapes live in here, because the plan is two different things. Languages
- * are a fixed set with three slots — one primary, one secondary, everything else
- * tertiary — and what changes over the year is which language sits in which
- * slot. Running, music and study are seasons you name, date and give a length.
+ * move between three slots — primary, secondary and tertiary — one language to a
+ * slot at a time, and what changes over the year is which language sits where.
+ * Running, music and study are seasons you name, date and give a length.
  */
 
 /**
@@ -25,8 +25,6 @@ export type Block = {
 	kind: Kind;
 	title: string;
 	detail: string;
-	dose: string;
-	target: string;
 	from: string;
 	to: string;
 };
@@ -46,8 +44,6 @@ export type Assignment = {
 	slot: Slot;
 	from: string;
 	to: string;
-	dose: string;
-	target: string;
 };
 
 export type Plan = {
@@ -76,6 +72,15 @@ export function addDays(iso: string, n: number) {
 	return date.toISOString().slice(0, 10);
 }
 
+/** The same day `months` calendar months later, clamped to the month's end. */
+export function addMonths(iso: string, months: number) {
+	const [year, month, date] = iso.split('-').map(Number);
+	const target = new Date(Date.UTC(year, month - 1 + months, 1));
+	const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+	target.setUTCDate(Math.min(date, last));
+	return target.toISOString().slice(0, 10);
+}
+
 export function validDate(value: unknown): value is string {
 	return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(day(value));
 }
@@ -89,7 +94,7 @@ export function slotOf(plan: Plan, language: string, date: string): Assignment |
 	);
 }
 
-/** Who holds what on a date. Every language without an assignment is tertiary. */
+/** Who holds what on a date. Null means the language is not in a slot that day. */
 export function slotsOn(plan: Plan, date: string): Map<string, Assignment | null> {
 	const held = new Map<string, Assignment | null>();
 	for (const language of plan.languages) held.set(language.id, slotOf(plan, language.id, date));
@@ -151,18 +156,18 @@ export function problems(plan: Plan): string[] {
 		}
 	}
 
-	// Only one primary and one secondary may be held at any instant.
+	// A slot holds one language at a time, tertiary included.
 	const edges = [...new Set(plan.assignments.flatMap((item) => [item.from, item.to]))].sort();
 	for (const edge of edges) {
 		if (!validDate(edge)) continue;
 		const live = plan.assignments.filter((item) => item.from <= edge && edge <= item.to);
-		const primary = live.filter((item) => item.slot === 'primary');
-		const secondary = live.filter((item) => item.slot === 'secondary');
-		if (primary.length > 1) {
-			found.push(`${primary.map((item) => item.language).join(', ')} are all primary on ${edge}`);
-		}
-		if (secondary.length > 1) {
-			found.push(`${secondary.map((item) => item.language).join(', ')} are all secondary on ${edge}`);
+		for (const slot of SLOTS) {
+			const holders = live.filter((item) => item.slot === slot);
+			if (holders.length > 1) {
+				found.push(
+					`${holders.map((item) => item.language).join(', ')} are all ${slot} on ${edge}`
+				);
+			}
 		}
 	}
 

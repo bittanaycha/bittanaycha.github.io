@@ -5,34 +5,40 @@
 	 * the plan is.
 	 */
 	type Mark = { id: string; system: string; name: string; detail: string; date: string };
-	type Block = {
+	type Bar = {
 		id: string;
-		kind: string;
 		title: string;
 		from: string;
 		to: string;
 	};
+	type Lane = { id: string; label: string; tone: string; bars: Bar[] };
 	type Season = { name: string; from: string; to: string };
 
 	let {
 		from,
 		to,
 		seasons,
-		blocks,
+		lanes,
 		today,
+		anchor,
 		marks = [],
 		labels = true,
-		onpick
+		onpick,
+		cursor
 	}: {
 		from: string;
 		to: string;
 		seasons: Season[];
-		blocks: Block[];
+		lanes: Lane[];
 		today: string;
+		/** The winter solstice pinned to nine o'clock. */
+		anchor: string;
 		marks?: Mark[];
 		/** The kō names around the rim. Off where the ring is a date picker. */
 		labels?: boolean;
 		onpick?: (date: string) => void;
+		/** A date being edited, marked on the rim. */
+		cursor?: string | null;
 	} = $props();
 
 	// The canvas is bigger than the wheel: the 72 kō need the ring outside it.
@@ -42,11 +48,11 @@
 	const C = SIZE / 2;
 	const RIM = 300;
 	const BAND = 263;
-	const TICK = 254;
 	const MONTH = 239;
 	const OUTER = 211;
-	const STEP = 22;
-	const WIDTH = 14;
+	const INSET = 88;
+	const STEP = 24;
+	const WIDTH = 15;
 	const GLYPH = 13.5;
 
 	const day = (iso: string) => new Date(`${iso}T12:00:00Z`).getTime();
@@ -56,14 +62,15 @@
 	const total = $derived(end - start);
 
 	/**
-	 * Degrees clockwise from the window's first day. The window starts at the
-	 * winter solstice, and that point sits at the left of the circle: the year
-	 * turns from 9 o'clock through 12 to 3 and round to 6.
+	 * Degrees clockwise from nine o'clock. The winter solstice is always at
+	 * 180, so the left of the wheel is the same point in the year whatever the
+	 * window holds.
 	 */
-	/** Days outside the window sit on its edge rather than wrapping round it. */
+	const opening = $derived(180 + ((start - day(anchor)) / total) * 360);
+
 	function angle(date: string) {
-		const offset = Math.min(total, Math.max(0, day(date) - start));
-		return (offset / total) * 360 + 180;
+		const raw = 180 + ((day(date) - day(anchor)) / total) * 360;
+		return Math.min(opening + 360, Math.max(opening, raw));
 	}
 
 	const polar = (radius: number, degrees: number) => {
@@ -72,7 +79,7 @@
 	};
 
 	function arc(radius: number, a1: number, a2: number) {
-		const sweep = ((a2 - a1) % 360 + 360) % 360;
+		const sweep = Math.max(0, Math.min(360, a2 - a1));
 		if (sweep >= 359.9) {
 			const [x1, y1] = polar(radius, a1);
 			const [x2, y2] = polar(radius, a1 + 180);
@@ -84,28 +91,18 @@
 	}
 
 	/**
-	 * The spokes a block covers. Six months either side of today is what is read,
-	 * and anything running past the solstice carries round the seam rather than
-	 * stopping at it, so the solstice can stay pinned to the left.
+	 * The spokes a bar covers inside the window. Dates outside are clipped, not
+	 * carried round the seam: the window is one turn of real time, so a bar that
+	 * runs past the end belongs in the next turn, not at the start of this one.
 	 */
-	const near = $derived(start + (day(today) - start) - 182 * DAY);
-	const far = $derived(start + (day(today) - start) + 183 * DAY);
-
-	function spans(block: Block): { from: number; to: number }[] {
-		const a = Math.max(day(block.from), near);
-		const b = Math.min(day(block.to), far);
-		if (b < a) return [];
-		const length = Math.min(total, b - a);
-		const head = ((a - start) % total + total) % total;
-		const tail = head + length;
-		if (tail <= total) return [{ from: head, to: tail }];
-		return [
-			{ from: head, to: total },
-			{ from: 0, to: tail - total }
-		];
+	function spans(bar: Bar): { from: number; to: number }[] {
+		const a = Math.max(day(bar.from), start);
+		const b = Math.min(day(bar.to), end);
+		if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return [];
+		return [{ from: a - start, to: b - start }];
 	}
 
-	const degrees = (offset: number) => (offset / total) * 360 + 180;
+	const degrees = (offset: number) => opening + (offset / total) * 360;
 
 	const seasonTone: Record<string, string> = {
 		spring: 'var(--spring)',
@@ -114,22 +111,16 @@
 		winter: 'var(--winter)'
 	};
 
-	/** Two language rails sit inside the season rails, so they get their own two. */
-	const PALETTE = ['var(--ink)', '#d98b5f', '#a78bd4', '#7fa6dc', '#4f6d92', '#c9b458'];
-
-	const radiusOf = (index: number) => Math.max(96, OUTER - index * STEP);
-	const toneOf = (index: number) => PALETTE[index % PALETTE.length];
-
-	const RAIL: Record<string, number> = { language: 147, 'language-2': 125, 'language-3': 103 };
-	const RAIL_TONE: Record<string, string> = {
-		language: '#7fa6dc',
-		'language-2': '#4f6d92',
-		'language-3': '#33455c'
-	};
+	/** Every lane gets a ring; the rings shrink to fit however many there are. */
+	const gap = $derived(lanes.length > 1 ? Math.min(STEP, (OUTER - INSET) / (lanes.length - 1)) : 0);
+	const laneWidth = $derived(Math.max(5, Math.min(WIDTH, gap * 0.62)));
+	const radiusOf = (index: number) => OUTER - index * gap;
 
 	const tone = (name: string) => seasonTone[name.split(' ')[0]] ?? 'var(--ink)';
 
-	const live = (block: Block) => block.from <= today && today <= block.to;
+	const live = (bar: Bar) => bar.from <= today && today <= bar.to;
+
+	const inside = (date: string) => date >= from && date <= to;
 
 	/** Whatever the pointer is over, and where it is, so the label can follow it. */
 	type Tip = { head: string; body: string; tone: string };
@@ -149,14 +140,14 @@
 		tip = null;
 	}
 
-	const weeks = (block: Block) => Math.round((day(block.to) - day(block.from) + DAY) / (7 * DAY));
+	const weeks = (bar: Bar) => Math.round((day(bar.to) - day(bar.from) + DAY) / (7 * DAY));
 
-	const left = (block: Block) => Math.round((day(block.to) - day(today)) / DAY);
+	const left = (bar: Bar) => Math.round((day(bar.to) - day(today)) / DAY);
 
-	/** How the band stands today: days to go, days until it starts, or done. */
-	function standing(block: Block) {
-		if (today < block.from) return `starts in ${Math.round((day(block.from) - day(today)) / DAY)} days`;
-		const days = left(block);
+	/** How the bar stands today: days to go, days until it starts, or done. */
+	function standing(bar: Bar) {
+		if (today < bar.from) return `starts in ${Math.round((day(bar.from) - day(today)) / DAY)} days`;
+		const days = left(bar);
 		if (days < 0) return 'done';
 		if (days === 0) return 'last day';
 		return `${days} days left`;
@@ -210,11 +201,16 @@
 	function pick(event: MouseEvent) {
 		if (!onpick || !shell) return;
 		const box = shell.getBoundingClientRect();
-		const x = event.clientX - box.left - (box.width * C) / SIZE;
-		const y = event.clientY - box.top - (box.height * C) / SIZE;
-		let degrees = (Math.atan2(y, x) * 180) / Math.PI + 90;
-		if (degrees < 0) degrees += 360;
-		const at = new Date(start + (degrees / 360) * total);
+		const x = event.clientX - (box.left + box.width / 2);
+		const y = event.clientY - (box.top + box.height / 2);
+		// The hub is not a date; leave clicks there alone. Follow the drawn
+		// size, or the inner lanes of a small ring fall inside the dead zone.
+		const hub = (66 + 2) * (box.width / SIZE);
+		if (Math.hypot(x, y) < hub) return;
+		let turned = (Math.atan2(y, x) * 180) / Math.PI;
+		while (turned < opening) turned += 360;
+		while (turned >= opening + 360) turned -= 360;
+		const at = new Date(day(anchor) + ((turned - 180) / 360) * total);
 		onpick(at.toISOString().slice(0, 10));
 	}
 </script>
@@ -309,45 +305,69 @@
 			y2={polar(BAND - 11, degrees)[1]}
 			class="month-tick"
 		/>
-		<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
-			{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}{long
-				? ` ${date.slice(2, 4)}`
-				: ''}
-		</text>
+		{#if labels}
+			<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
+				{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}{long
+					? ` ${date.slice(2, 4)}`
+					: ''}
+			</text>
+		{/if}
 	{/each}
 
-	{#each blocks as block, index (block.id)}
-		{@const pieces = spans(block)}
-		{@const radius = RAIL[block.kind] ?? radiusOf(index)}
-		{@const tone = RAIL_TONE[block.kind] ?? toneOf(index)}
-		{#each pieces as piece (piece.from)}
-			<path
-				d={arc(radius, degrees(piece.from), degrees(piece.to))}
-				stroke={tone}
-				class="block"
-				class:live={live(block)}
-				class:dim={!live(block)}
-				onmouseenter={(event) =>
-					show(event, {
-						head: `${block.kind} - ${block.title}`,
-						body: `${numDate(block.from)} to ${numDate(block.to)} - ${weeks(block)} weeks - ${standing(block)}`,
-						tone
-					})}
-				onmousemove={follow}
-				onmouseleave={hide}
-				role="presentation"
+	{#each lanes as lane, index (lane.id)}
+		{@const radius = radiusOf(index)}
+		<g style:--lane-width={`${laneWidth}px`}>
+			<circle
+				cx={C}
+				cy={C}
+				r={radius}
+				class="rail"
+				class:empty={lane.bars.length === 0}
+				style:stroke={lane.tone}
 			/>
-		{/each}
+			{#each lane.bars as bar (bar.id)}
+				{#each spans(bar) as piece (piece.from)}
+					<path
+						d={arc(radius, degrees(piece.from), degrees(piece.to))}
+						stroke={lane.tone}
+						class="block"
+						class:live={live(bar)}
+						class:dim={!live(bar)}
+						onmouseenter={(event) =>
+							show(event, {
+								head: bar.title === lane.label ? bar.title : `${lane.label} - ${bar.title}`,
+								body: `${numDate(bar.from)} to ${numDate(bar.to)} - ${weeks(bar)} weeks - ${standing(bar)}`,
+								tone: lane.tone
+							})}
+						onmousemove={follow}
+						onmouseleave={hide}
+						role="presentation"
+					/>
+				{/each}
+			{/each}
+		</g>
 	{/each}
 
-	<line
-		x1={polar(78, angle(today))[0]}
-		y1={polar(78, angle(today))[1]}
-		x2={polar(RIM - 4, angle(today))[0]}
-		y2={polar(RIM - 4, angle(today))[1]}
-		class="hand"
-	/>
-	<circle cx={polar(RIM + 7, angle(today))[0]} cy={polar(RIM + 7, angle(today))[1]} r="5" class="dot" />
+	{#if inside(today)}
+		<line
+			x1={polar(78, angle(today))[0]}
+			y1={polar(78, angle(today))[1]}
+			x2={polar(RIM - 4, angle(today))[0]}
+			y2={polar(RIM - 4, angle(today))[1]}
+			class="hand"
+		/>
+		<circle cx={polar(RIM + 7, angle(today))[0]} cy={polar(RIM + 7, angle(today))[1]} r="5" class="dot" />
+	{/if}
+
+	{#if cursor && inside(cursor)}
+		<circle
+			cx={polar(RIM + 7, angle(cursor))[0]}
+			cy={polar(RIM + 7, angle(cursor))[1]}
+			r="4"
+			class="cursor"
+		/>
+	{/if}
+
 	<circle cx={C} cy={C} r="66" class="hub" />
 	</svg>
 
@@ -445,16 +465,28 @@
 		}
 	}
 
+	/* A rail is the lane's whole turn: the slot exists even where it is empty. */
+	.rail {
+		fill: none;
+		stroke-width: var(--lane-width);
+		opacity: 0.16;
+		pointer-events: none;
+	}
+
+	.rail.empty {
+		opacity: 0.05;
+	}
+
 	.block {
 		fill: none;
-		stroke-width: 14;
+		stroke-width: var(--lane-width);
 		stroke-linecap: butt;
 		pointer-events: stroke;
 		cursor: default;
 	}
 
 	.block:hover {
-		stroke-width: 20;
+		stroke-width: calc(var(--lane-width) + 4px);
 	}
 
 	.block.dim {
@@ -473,6 +505,12 @@
 
 	.dot {
 		fill: var(--ink);
+	}
+
+	.cursor {
+		fill: #000;
+		stroke: var(--ink);
+		stroke-width: 1.5;
 	}
 
 	.hub {

@@ -9,6 +9,7 @@
  */
 
 import { KO, SEKKI } from './sekki';
+import { addDays, addMonths } from './plan-rules';
 
 export type System = 'astronomical' | 'meteorological' | 'celtic' | 'sekki' | 'ko';
 
@@ -220,20 +221,62 @@ export function marksBetween(from: number, to: number, systems?: System[]): Mark
 }
 
 /**
- * The year the ring shows: the next winter solstice through the one after it,
- * so the wheel always starts at 9 o'clock and always covers a full turn.
+ * The year the ring shows: four months behind and eight ahead, 365 days in all.
+ * A full turn, so a bar that runs past either end is clipped rather than
+ * wrapped into another year.
  */
-export function yearWindow(today: string) {
-	const at = new Date(`${today}T12:00:00Z`).getTime();
-	// The solstice on or before today. The wheel pivots on it, so it never moves.
-	let opening = instantAt(270, at - 400 * DAY);
-	for (let step = 0; step < 2; step += 1) {
-		const next = instantAt(270, opening + 10 * DAY);
-		if (localDate(next) > today) break;
-		opening = next;
+export function ringWindow(center: string) {
+	const from = addMonths(center, -4);
+	return { from, to: addDays(from, 364) };
+}
+
+export type Season = { name: string; detail: string; from: string; to: string };
+
+/**
+ * The astronomical quarters that cover a window. The quarter before the window
+ * opens is included, so the band starts at the left edge rather than a month in.
+ */
+export function seasonsBetween(from: string, to: string): Season[] {
+	const at = new Date(`${from}T12:00:00Z`).getTime();
+	const marks = marksBetween(at - 120 * DAY, new Date(`${to}T12:00:00Z`).getTime() + 2 * DAY, [
+		'astronomical'
+	]);
+	const quarters = marks.filter((mark) => mark.system === 'astronomical');
+	const before = quarters.filter((mark) => mark.date <= from).at(-1);
+	const list = before ? [before, ...quarters.filter((mark) => mark.date > from)] : quarters;
+	return list.map((mark, index) => ({
+		name: mark.name.split(' ')[0],
+		detail: mark.name,
+		from: mark.date,
+		to: list[index + 1]?.date ?? to
+	}));
+}
+
+/**
+ * The winter solstice nearest a date. The ring pins this to nine o'clock, so
+ * the left of the wheel is always the same point in the year.
+ */
+export function winterSolsticeIn(from: string, to: string, around: string) {
+	const startYear = Number(from.slice(0, 4)) - 1;
+	const endYear = Number(to.slice(0, 4)) + 1;
+	for (let year = startYear; year <= endYear; year += 1) {
+		const date = localDate(instantAt(270, Date.UTC(year, 11, 21, 12)));
+		if (date >= from && date <= to) return date;
 	}
-	const closing = instantAt(270, opening + 10 * DAY);
-	return { from: localDate(opening), to: localDate(closing - DAY) };
+	return winterSolstice(around);
+}
+
+export function winterSolstice(around: string) {
+	const at = new Date(`${around}T12:00:00Z`).getTime();
+	const year = Number(around.slice(0, 4));
+	let best = '';
+	for (const candidate of [year - 1, year, year + 1]) {
+		const date = localDate(instantAt(270, Date.UTC(candidate, 11, 21, 12)));
+		if (!best || Math.abs(new Date(`${date}T12:00:00Z`).getTime() - at) < Math.abs(new Date(`${best}T12:00:00Z`).getTime() - at)) {
+			best = date;
+		}
+	}
+	return best;
 }
 
 /** The season a date falls in, given the astronomical quarters. */

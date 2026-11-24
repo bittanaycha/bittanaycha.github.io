@@ -48,7 +48,7 @@ passphrase there. Migrations run against the local database with
 | `src/lib/components/Ring.svelte` | The year as a circle: seasons on the rim, blocks as concentric arcs, today as a hand |
 | `src/lib/calendar.ts` | Quarter days from the sun's longitude, the Celtic and meteorological dates, sekki and kō |
 | `src/lib/sekki.ts` | The 24 sekki and the 72 kō: names, romaji, glosses and solar longitudes |
-| `src/lib/plan-rules.ts` | What a valid plan is: kinds, slots, one primary and one secondary at a time |
+| `src/lib/plan-rules.ts` | What a valid plan is: kinds, slots, one language per slot at a time |
 | `src/lib/server/` | Drizzle schema, D1 reads and writes, the passphrase session |
 | `scripts/plan-sync.mjs` | `npm run pull` and `npm run push`: the plan between the vault and the database |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
@@ -134,9 +134,9 @@ database), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
 `Reviews.md` (the Sunday log).
 
 Two shapes, because the year holds two kinds of thing. The six languages are a
-fixed set with three slots — one primary, one secondary, everything else tertiary
-— and what changes is which language holds which slot, over dates. Everything
-else (running, music, study) is a season: a kind, a name, two dates, a dose.
+fixed set with three slots — one primary, one secondary, one tertiary — and what
+changes is which language holds which slot, over dates. Everything else
+(running, music, study) is a season: a kind, a name, two dates.
 
 The **database owns the plan**. `/seasons` reads it per request, `/seasons/edit`
 writes it, and `plan.json` follows along. Cloudflare D1 holds four tables:
@@ -159,10 +159,12 @@ must match the Worker's secret.
 
 ### The ring and the dates
 
-The ring is one turn of the year and puts the winter solstice at its leftmost
-point, so the year runs from 9 o'clock clockwise: spring at the top, summer at the
-right, autumn at the bottom. Everything on the wheel — season bands, blocks, kō
-ticks, today's hand — is placed by that same mapping.
+The ring is one turn of the year, never more, and puts the winter solstice at
+its leftmost point. The year runs clockwise from 9 o'clock: spring at the top,
+summer at the right, autumn at the bottom. A bar that runs past the window is
+clipped at the rim, not carried round into the wrong year. Everything on the
+wheel — season bands, blocks, kō ticks, today's hand — is placed by that same
+mapping.
 
 `src/lib/calendar.ts` computes the quarter days from the sun's apparent
 longitude (Meeus, low precision — the instants land within a minute or so of the

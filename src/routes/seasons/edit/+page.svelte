@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Ring from '#lib/components/Ring.svelte';
-	import { marksBetween } from '#lib/calendar';
+	import { marksBetween, ringWindow, seasonsBetween, winterSolsticeIn } from '#lib/calendar';
 	import { numDate } from '#lib/format';
 	import {
 		SLOTS,
 		addDays,
+		addMonths,
 		days as countDays,
 		problems as planProblems,
 		weeks as countWeeks,
@@ -39,13 +40,15 @@
 	const systems = ['all', 'astronomical', 'meteorological', 'celtic', 'sekki', 'ko'] as const;
 	let system = $state<(typeof systems)[number]>('all');
 
-	/** The year opens at the winter solstice and stretches to hold the plan. */
-	// svelte-ignore state_referenced_locally
-	const windowFrom = data.window.from;
-
-	// The ring is the same rolling year as the reading page: half a year either
-	// side of today, no stretching to reach a date the ring cannot show.
-	const windowTo = $derived(data.window.to);
+	/**
+	 * The wheel follows what is being edited: half a year either side of the
+	 * selected date. A date a year out stays on the wheel instead of sitting at
+	 * its edge, which is what used to make a preset look like it jumped to 2028.
+	 */
+	let center = $state(today);
+	const turn = $derived(ringWindow(center));
+	const windowFrom = $derived(turn.from);
+	const windowTo = $derived(turn.to);
 
 	const clashes = $derived.by(() =>
 		planProblems({
@@ -57,18 +60,8 @@
 		})
 	);
 
-	const seasons = $derived.by(() => {
-		const marks = marksBetween(
-			new Date(`${windowFrom}T12:00:00Z`).getTime(),
-			new Date(`${windowTo}T12:00:00Z`).getTime(),
-			['astronomical']
-		);
-		return marks.map((mark, index) => ({
-			name: mark.name,
-			from: mark.date,
-			to: marks[index + 1]?.date ?? addDays(mark.date, 91)
-		}));
-	});
+	const seasons = $derived(seasonsBetween(windowFrom, windowTo));
+	const solstice = $derived(winterSolsticeIn(windowFrom, windowTo, center));
 
 	/** Which endpoint the ring and the mark list are writing to. */
 	let selected = $state<{ kind: 'block' | 'assignment'; index: number; end: 'from' | 'to' }>({
@@ -77,20 +70,56 @@
 		end: 'from'
 	});
 
-	const ringBlocks = $derived([
-		...blocks
-			.filter((block) => block.from && block.to && block.from <= block.to)
-			.map((block) => ({ ...block, kind: block.kind })),
-		...assignments
-			.filter((item) => item.slot !== 'tertiary' && item.from && item.to && item.from <= item.to)
-			.map((item) => ({
-				id: `${item.language}-${item.from}`,
-				kind: 'language',
-				title: languages.find((language) => language.id === item.language)?.name ?? item.language,
-				from: item.from,
-				to: item.to
-			}))
-	]);
+	const SLOT_TONE: Record<string, string> = {
+		primary: '#9dc0ee',
+		secondary: '#6f97c8',
+		tertiary: '#4c6f9c'
+	};
+	const SEASON_TONE = ['#ffffff', '#d98b5f', '#a78bd4', '#c9b458'];
+
+	const valid = (row: { from: string; to: string }) =>
+		Boolean(row.from && row.to && row.from <= row.to);
+
+	/**
+	 * The wheel's rails: every season, then the three slots. The slots keep a
+	 * rail even when nobody holds them, so an empty slot looks like a place to
+	 * put a language rather than a missing row.
+	 */
+	const ringLanes = $derived.by(() => {
+		const seasons = [...blocks]
+			.filter(valid)
+			.sort((a, b) => (a.from < b.from ? -1 : 1))
+			.map((block, index) => ({
+				id: `block-${block.id}`,
+				label: block.title || 'a season',
+				tone: SEASON_TONE[index % SEASON_TONE.length],
+				bars: [
+					{
+						id: block.id,
+						title: block.title || 'a season',
+						from: block.from,
+						to: block.to,
+					}
+				]
+			}));
+
+		const slots = SLOTS.map((slot) => ({
+			id: `slot-${slot}`,
+			label: slot,
+			tone: SLOT_TONE[slot],
+			bars: assignments
+				.filter((item) => item.slot === slot && valid(item))
+				.sort((a, b) => (a.from < b.from ? -1 : 1))
+				.map((item) => ({
+					id: `${item.language}-${item.from}`,
+					title: languages.find((language) => language.id === item.language)?.name ?? item.language,
+					from: item.from,
+					to: item.to,
+				}))
+		}));
+
+		return [...seasons, ...slots];
+	});
 
 	const focus = $derived.by(() => {
 		const row = selected.kind === 'block' ? blocks[selected.index] : assignments[selected.index];
@@ -119,56 +148,48 @@
 		)
 	);
 
-	function setDate(date: string) {
-		if (selected.kind === 'block') {
-			const block = blocks[selected.index];
-			if (!block) return;
-			block[selected.end] = date;
-			if (selected.end === 'from' && block.to < date) block.to = addDays(date, 6);
-			blocks = [...blocks];
+	/** Keep the inclusive length when one end is pushed past the other. */
+	function keepSpan(row: { from: string; to: string }, end: 'from' | 'to', date: string) {
+		const span = Math.max(0, countDays(row.from, row.to));
+		if (end === 'from') {
+			row.from = date;
+			if (row.to < date) row.to = addDays(date, span - 1);
 		} else {
-			const item = assignments[selected.index];
-			if (!item) return;
-			item[selected.end] = date;
-			assignments = [...assignments];
+			row.to = date;
+			if (row.from > date) row.from = addDays(date, -(span - 1));
 		}
-		message = '';
 	}
 
-	/** The mark of any system closest to a date, so a quick length lands on one. */
-	function snap(date: string) {
-		const middle = new Date(`${date}T12:00:00Z`).getTime();
-		const found = marksBetween(
-			middle - 40 * 86_400_000,
-			middle + 40 * 86_400_000,
-			['astronomical', 'meteorological', 'celtic', 'sekki']
-		).map((mark) => ({
-			date: mark.date,
-			gap: Math.abs(new Date(`${mark.date}T12:00:00Z`).getTime() - middle)
-		}));
-		return found.sort((a, b) => a.gap - b.gap)[0]?.date ?? date;
+	/** Bring a date onto the wheel, but only when it has left the window. */
+	function recenter(date: string) {
+		if (date < windowFrom || date > windowTo) center = date;
+	}
+
+	function setDate(date: string) {
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+		const row = selected.kind === 'block' ? blocks[selected.index] : assignments[selected.index];
+		if (!row) return;
+		keepSpan(row, selected.end, date);
+		if (selected.kind === 'block') blocks = [...blocks];
+		else assignments = [...assignments];
+		recenter(date);
+		message = '';
 	}
 
 	/**
-	 * Start the block today, in a month, in three or in six. Today is exact; the
-	 * longer ones land on the nearest checkpoint. The length is kept, so the end
-	 * follows the start.
+	 * The preset dates are absolute and land on the endpoint being edited:
+	 * today is today, three months is the same day three calendar months out.
+	 * They do not snap to a festival, and they do not move the other end unless
+	 * the new date would cross it.
 	 */
-	function quick(days: number) {
-		if (selected.kind !== 'block') return;
-		const block = blocks[selected.index];
-		if (!block) return;
-		const span = countDays(block.from, block.to);
-		const start = days === 0 ? today : snap(addDays(today, days));
-		block.from = start;
-		block.to = addDays(start, span);
-		blocks = [...blocks];
-		selected = { kind: 'block', index: selected.index, end: 'from' };
-		message = '';
+	function quick(months: number) {
+		setDate(months === 0 ? today : addMonths(today, months));
 	}
 
 	function choose(kind: 'block' | 'assignment', index: number, end: 'from' | 'to') {
 		selected = { kind, index, end };
+		const row = kind === 'block' ? blocks[index] : assignments[index];
+		recenter(row?.[end] ?? today);
 	}
 
 	function addBlock() {
@@ -181,13 +202,12 @@
 				kind: 'season',
 				title: 'a season',
 				detail: '',
-				dose: '',
-				target: '',
 				from,
 				to: addDays(from, 7 * 12 - 1)
 			}
 		];
 		selected = { kind: 'block', index: blocks.length - 1, end: 'from' };
+		recenter(from);
 	}
 
 	function removeBlock(index: number) {
@@ -197,49 +217,40 @@
 		}
 	}
 
-	/** The next language that holds nothing today gets a row. */
-	/** True when another language already holds this slot over any of these days. */
-	function slotBusy(index: number, slot: string) {
-		// Tertiary is not a place, it is the absence of one: any number of
-		// languages can be there at once.
-		if (slot === 'tertiary') return false;
-		const row = assignments[index];
-		return assignments.some(
-			(other, at) =>
-				at !== index && other.slot === slot && other.from <= row.to && row.from <= other.to
+	/** The first language holding no slot over these days, else the first. */
+	function nextFree(from: string, to: string) {
+		const taken = new Set(
+			assignments.filter((item) => item.from <= to && from <= item.to).map((item) => item.language)
 		);
+		return languages.find((language) => !taken.has(language.id)) ?? languages[0];
 	}
 
-	function addAssignment() {
-		const busy = new Set(
-			assignments.filter((item) => item.to >= today && item.from <= today).map((item) => item.language)
-		);
-		const free = languages.find((language) => !busy.has(language.id)) ?? languages[0];
+	/**
+	 * Add a stretch to a slot. It follows the last stretch in that slot, keeps
+	 * the same length, and takes a language nobody else holds on those days.
+	 */
+	function addAssignment(slot: string) {
+		const same = assignments
+			.filter((item) => item.slot === slot)
+			.sort((a, b) => (a.from < b.from ? -1 : 1));
+		const last = same.at(-1);
+		const from = last ? addDays(last.to, 1) : today;
+		const span = last ? Math.max(6, countDays(last.from, last.to)) : 181;
+		const to = addDays(from, span - 1);
+		const free = nextFree(from, to);
 		if (!free) return;
-		const from = today;
-		const to = addDays(today, 364);
-		// One primary and one secondary at a time, so a new row takes the first
-		// slot nobody else holds across the days it covers.
-		const slot =
-			SLOTS.find(
-				(candidate) =>
-					candidate === 'tertiary' ||
-					!assignments.some(
-						(item) => item.slot === candidate && item.from <= to && from <= item.to
-					)
-			) ?? 'tertiary';
 		assignments = [
 			...assignments,
 			{
 				language: free.id,
-				slot,
+				slot: slot as Assignment['slot'],
 				from,
-				to,
-				dose: slot === 'tertiary' ? '2 x 20 min' : '3 x 30 min',
-				target: ''
+				to
 			}
 		];
 		selected = { kind: 'assignment', index: assignments.length - 1, end: 'from' };
+		recenter(from);
+		message = '';
 	}
 
 	function removeAssignment(index: number) {
@@ -255,6 +266,7 @@
 		if (!block || !Number.isFinite(weeks) || weeks < 1) return;
 		block.to = addDays(block.from, Math.round(weeks) * 7 - 1);
 		blocks = [...blocks];
+		recenter(block.to);
 	}
 
 	function lengthOf(block: Block) {
@@ -358,10 +370,12 @@
 				from={windowFrom}
 				to={windowTo}
 				{seasons}
-				blocks={ringBlocks}
+				anchor={solstice}
+				lanes={ringLanes}
 				marks={ringMarks}
 				labels={false}
 				{today}
+				cursor={focus}
 				onpick={setDate}
 			/>
 		</div>
@@ -383,9 +397,9 @@
 
 			<div class="quick">
 				<button type="button" onclick={() => quick(0)}>today</button>
-				<button type="button" onclick={() => quick(30)}>1 month</button>
-				<button type="button" onclick={() => quick(91)}>3 months</button>
-				<button type="button" onclick={() => quick(182)}>6 months</button>
+				<button type="button" onclick={() => quick(1)}>in 1 month</button>
+				<button type="button" onclick={() => quick(3)}>in 3 months</button>
+				<button type="button" onclick={() => quick(6)}>in 6 months</button>
 			</div>
 
 			<div class="field">
@@ -465,56 +479,70 @@
 	</section>
 
 	<section class="panel">
-		<table>
-			<thead>
-				<tr>
-					<th>language</th>
-					<th>slot</th>
-					<th>from</th>
-					<th>to</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each assignments as item, index (index)}
-					<tr class:chosen={selected.kind === 'assignment' && selected.index === index}>
-						<td>
-							<select
-								value={item.language}
-								onchange={(e) => (item.language = e.currentTarget.value)}
-							>
-								{#each languages as language (language.id)}
-									<option value={language.id}>{language.name}</option>
-								{/each}
-							</select>
-						</td>
-						<td>
-							<select value={item.slot} onchange={(e) => (item.slot = e.currentTarget.value as Assignment['slot'])}>
-								{#each SLOTS as slot (slot)}
-									<option value={slot} disabled={slotBusy(index, slot) && item.slot !== slot}>
-										{slot}{slotBusy(index, slot) && item.slot !== slot ? ' (taken)' : ''}
-									</option>
-								{/each}
-							</select>
-						</td>
-						<td>
-							<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'from'} onclick={() => choose('assignment', index, 'from')}>
-								{numDate(item.from)}
-							</button>
-						</td>
-						<td>
-							<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'to'} onclick={() => choose('assignment', index, 'to')}>
-								{numDate(item.to)}
-							</button>
-						</td>
-						<td><button type="button" class="remove" onclick={() => removeAssignment(index)}>remove</button></td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-		<div class="add">
-			<button type="button" onclick={addAssignment}>+ slot</button>
-		</div>
+		<p class="tag">slots</p>
+		{#each SLOTS as slot (slot)}
+			{@const rows = assignments
+				.map((item, index) => ({ item, index }))
+				.filter(({ item }) => item.slot === slot)}
+			<div class="slot" class:empty={rows.length === 0} style:--slot-tone={SLOT_TONE[slot]}>
+				<div class="slot-head">
+					<span class="slot-name">{slot}</span>
+					<span class="slot-note">
+						{rows.length === 0
+							? 'nobody holds this slot'
+							: `${rows.length} stretch${rows.length === 1 ? '' : 'es'}`}
+					</span>
+					<button type="button" class="add-slot" onclick={() => addAssignment(slot)}>
+						+ language
+					</button>
+				</div>
+
+				{#if rows.length}
+					<table>
+						<thead>
+							<tr>
+								<th>language</th>
+								<th>from</th>
+								<th>to</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each rows as { item, index } (index)}
+								<tr class:chosen={selected.kind === 'assignment' && selected.index === index}>
+									<td>
+										<select
+											value={item.language}
+											onchange={(e) => {
+												item.language = e.currentTarget.value;
+												assignments = [...assignments];
+											}}
+										>
+											{#each languages as language (language.id)}
+												<option value={language.id}>{language.name}</option>
+											{/each}
+										</select>
+									</td>
+									<td>
+										<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'from'} onclick={() => choose('assignment', index, 'from')}>
+											{numDate(item.from)}
+										</button>
+									</td>
+									<td>
+										<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'to'} onclick={() => choose('assignment', index, 'to')}>
+											{numDate(item.to)}
+										</button>
+									</td>
+									<td>
+										<button type="button" class="remove" onclick={() => removeAssignment(index)}>remove</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				{/if}
+			</div>
+		{/each}
 	</section>
 
 	<section class="panel">
@@ -620,7 +648,7 @@
 
 	.pick {
 		display: grid;
-		grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
 		gap: clamp(1rem, 3vw, 2.5rem);
 		border-bottom: 1px solid var(--rule);
 		padding: 1.4rem 0;
@@ -706,6 +734,7 @@
 	}
 
 	.mark-name {
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
 		white-space: nowrap;
 	}
 
@@ -794,6 +823,70 @@
 		flex-wrap: wrap;
 	}
 
+	.tag {
+		margin: 0 0 0.9rem;
+		font-size: 0.7rem;
+		letter-spacing: 0.16em;
+		color: var(--faint);
+	}
+
+	/* A slot is a lane with its own colour, not a row in one big table. */
+	.slot {
+		border-left: 2px solid var(--slot-tone);
+		padding: 0.1rem 0 0.9rem 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.slot:last-child {
+		margin-bottom: 0;
+	}
+
+	.slot.empty {
+		border-left-color: rgb(255 255 255 / 0.14);
+	}
+
+	.slot-head {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.4rem 1rem;
+	}
+
+	.slot table th:nth-child(1) {
+		width: 8.5rem;
+	}
+
+	.slot table th:nth-child(2),
+	.slot table th:nth-child(3) {
+		width: 7.5rem;
+	}
+
+	.slot table th:nth-child(4) {
+		width: 6rem;
+	}
+
+	.slot-name {
+		font-size: 0.95rem;
+		letter-spacing: 0.14em;
+	}
+
+	.slot-note {
+		color: var(--faint);
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+	}
+
+	.add-slot {
+		margin-left: auto;
+		border-color: transparent;
+		color: var(--dim);
+	}
+
+	.add-slot:hover {
+		border-color: var(--ink);
+		color: var(--ink);
+	}
+
 	@media (max-width: 60rem) {
 		.pick {
 			grid-template-columns: minmax(0, 1fr);
@@ -807,10 +900,8 @@
 			font-size: 0.72rem;
 		}
 
-		th:nth-child(5),
-		td:nth-child(5),
-		th:nth-child(8),
-		td:nth-child(8) {
+		.panel > table th:nth-child(4),
+		.panel > table td:nth-child(4) {
 			display: none;
 		}
 	}

@@ -1,6 +1,6 @@
 import { databaseOf } from '#lib/server/bindings';
 import { readPlan } from '#lib/server/plan';
-import { localDate, marksFor, yearWindow } from '#lib/calendar';
+import { localDate, marksFor, ringWindow, seasonsBetween, winterSolsticeIn } from '#lib/calendar';
 import { weeks } from '#lib/plan-rules';
 import type { PageServerLoad } from './$types';
 
@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 			editor: locals.editor,
 			today,
 			window: { from: today, to: today },
+			solstice: today,
 			seasonName: 'the year',
 			seasons: [],
 			languages: [],
@@ -28,54 +29,37 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	}
 
 	const plan = await readPlan(db);
-	const year = Number(today.slice(0, 4));
 
-	// Half a year either side of today, so nothing that matters is left off the
-	// rim: the winter solstice is wherever it falls in that window.
-	const turn = yearWindow(today);
-	const opening = { date: turn.from };
-	const closing = { date: turn.to };
+	// The ring is one turn of the year, never more: a plan that runs past it is
+	// clipped at the rim rather than squeezed into a longer sweep.
+	const turn = ringWindow(today);
 
-	const marks = [
-		...marksFor(year - 1),
-		...marksFor(year),
-		...marksFor(year + 1),
-		...marksFor(year + 2)
-	];
-	const quarters = marks
-		.filter((mark) => mark.system === 'astronomical')
-		.sort((a, b) => (a.date < b.date ? -1 : 1));
+	const first = Number(turn.from.slice(0, 4)) - 1;
+	const last = Number(turn.to.slice(0, 4)) + 1;
+	const marks = [];
+	for (let year = first; year <= last; year += 1) marks.push(...marksFor(year));
+	const allMarks = marks.sort((a, b) => (a.date < b.date ? -1 : 1));
 
-	const inWindow = marks.filter((mark) => mark.date >= opening.date && mark.date < closing.date);
-
-	const allMarks = [...marks].sort((a, b) => (a.date < b.date ? -1 : 1));
+	const inWindow = allMarks.filter((mark) => mark.date >= turn.from && mark.date <= turn.to);
+	const seasons = seasonsBetween(turn.from, turn.to);
+	const solstice = winterSolsticeIn(turn.from, turn.to, today);
 
 	// Today's kō comes from the whole almanac, not from the window: the window
-	// starts at the next solstice, so its first kō is a month away.
+	// opens in the past, so its last kō can be behind us.
 	const koNow = allMarks.filter((mark) => mark.system === 'ko' && mark.date <= today).at(-1);
-	const current = koNow ?? inWindow.find((mark) => mark.system === 'ko') ?? null;
-
-	const seasons = quarters
-		.filter((mark) => mark.date >= opening.date && mark.date < closing.date)
-		.map((mark, index, all) => ({
-			// The quarter the season opens on names it: autumn, winter, spring, summer.
-			name: mark.name.split(' ')[0],
-			detail: mark.name,
-			from: mark.date,
-			to: all[index + 1]?.date ?? closing.date
-		}));
-
+	const current = koNow ?? inWindow.filter((mark) => mark.system === 'ko').at(-1) ?? null;
 
 	// Which quarter day opened the season we are standing in.
-	const allQuarters = allMarks.filter((mark) => mark.system === 'astronomical');
-	const quarter = allQuarters.filter((mark) => mark.date <= today).at(-1) ?? allQuarters[0];
+	const quarters = allMarks.filter((mark) => mark.system === 'astronomical');
+	const quarter = quarters.filter((mark) => mark.date <= today).at(-1) ?? quarters[0];
 
 	return {
 		ready: true as const,
 		editor: locals.editor,
 		today,
-		window: { from: opening.date, to: closing.date },
-		seasonName: quarter.name.split(' ')[0],
+		window: turn,
+		solstice,
+		seasonName: quarter?.name.split(' ')[0] ?? 'the year',
 		seasons,
 		languages: plan.languages,
 		assignments: plan.assignments,

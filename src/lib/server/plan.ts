@@ -32,17 +32,13 @@ export async function readPlan(db: Binding): Promise<Plan> {
 			language: row.language,
 			slot: row.slot as Assignment['slot'],
 			from: row.from,
-			to: row.to,
-			dose: row.dose,
-			target: row.target
+			to: row.to
 		})),
 		blocks: blockRows.map((row): Block => ({
 			id: row.id,
 			kind: row.kind as Block['kind'],
 			title: row.title,
 			detail: row.detail,
-			dose: row.dose,
-			target: row.target,
 			from: row.from,
 			to: row.to
 		}))
@@ -85,9 +81,7 @@ export async function writePlan(db: Binding, plan: Plan) {
 				language: item.language,
 				slot: item.slot,
 				from: item.from,
-				to: item.to,
-				dose: item.dose ?? '',
-				target: item.target ?? ''
+				to: item.to
 			})
 		),
 		...plan.blocks.map((block) =>
@@ -96,8 +90,6 @@ export async function writePlan(db: Binding, plan: Plan) {
 				kind: block.kind,
 				title: block.title,
 				detail: block.detail ?? '',
-				dose: block.dose ?? '',
-				target: block.target ?? '',
 				from: block.from,
 				to: block.to
 			})

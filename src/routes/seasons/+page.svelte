@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Ring from '#lib/components/Ring.svelte';
 	import { isoDay, numDate } from '#lib/format';
-	import { SLOTS, type Assignment } from '#lib/plan-rules';
+	import { SLOTS, weeks, type Assignment } from '#lib/plan-rules';
 
 	let { data } = $props();
 
@@ -23,18 +23,12 @@
 	const assignments = $derived(data.ready ? data.assignments : []);
 	const languages = $derived(data.ready ? data.languages : []);
 
-	/** The window the strip covers: from the first start to the last end. */
-	const first = $derived(blocks.map((block) => block.from).sort()[0] ?? today);
-	const last = $derived(blocks.map((block) => block.to).sort().at(-1) ?? today);
+	/** The strip covers the same turn as the ring, never a longer plan. */
+	const first = $derived(data.window.from);
+	const last = $derived(data.window.to);
 	const total = $derived(span(first, last) + 1);
 
-	const season = $derived(
-		data.ready
-			? (data.seasons.find((entry) => entry.from <= today && today < entry.to) ?? data.seasons[0])
-			: null
-	);
-
-	/** Slots held today, by language id. Anything unassigned is tertiary. */
+	/** Slots held today, by language id. Unassigned is not a slot. */
 	const holding = $derived.by(() => {
 		const map = new Map<string, Assignment>();
 		for (const item of assignments) {
@@ -43,33 +37,54 @@
 		return map;
 	});
 
-	const slotOf = (id: string) => holding.get(id)?.slot ?? 'tertiary';
+	const SLOT_TONE: Record<string, string> = {
+		primary: '#9dc0ee',
+		secondary: '#6f97c8',
+		tertiary: '#4c6f9c'
+	};
 
-	const bySlot = $derived.by(() => {
-		const out: Record<string, { language: string; name: string; assignment: Assignment | null }[]> =
-			{ primary: [], secondary: [], tertiary: [] };
-		for (const language of languages) {
-			const assignment = holding.get(language.id) ?? null;
-			out[assignment?.slot ?? 'tertiary'].push({
-				language: language.id,
-				name: language.name,
-				assignment
-			});
-		}
-		return out;
-	});
+	const SEASON_TONE = ['#ffffff', '#d98b5f', '#a78bd4', '#c9b458'];
 
-	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
-
-	/** One rail per block, as many as there are blocks. */
+	/**
+	 * One rail per season and then one per slot, outward to inward. A slot is a
+	 * lane even when it is empty: that is what makes it a slot rather than a
+	 * label on a language.
+	 */
 	const lanes = $derived.by(() => {
-		const ordered = [...blocks].sort((a, b) => (a.from < b.from ? -1 : 1));
-		return ordered.map((block) => ({
-			id: block.id,
-			name: block.title,
-			bars: [block],
-			length: 1
+		const seasons = [...blocks]
+			.sort((a, b) => (a.from < b.from ? -1 : 1))
+			.map((block, index) => ({
+				id: `block-${block.id}`,
+				slot: null,
+				label: block.title,
+				tone: SEASON_TONE[index % SEASON_TONE.length],
+				bars: [
+					{
+						id: block.id,
+						title: block.title,
+						from: block.from,
+						to: block.to,
+					}
+				]
+			}));
+
+		const slots = SLOTS.map((slot) => ({
+			id: `slot-${slot}`,
+			label: slot,
+			slot,
+			tone: SLOT_TONE[slot],
+			bars: assignments
+				.filter((item) => item.slot === slot)
+				.sort((a, b) => (a.from < b.from ? -1 : 1))
+				.map((item) => ({
+					id: `${item.language}-${item.from}`,
+					title: languages.find((language) => language.id === item.language)?.name ?? item.language,
+					from: item.from,
+					to: item.to,
+				}))
 		}));
+
+		return [...seasons, ...slots];
 	});
 
 	/** Left edge and width of a date range on the strip, as percentages. */
@@ -78,17 +93,6 @@
 		const b = Math.min(total, span(first, to) + 1);
 		return `left: ${(a / total) * 100}%; width: ${(Math.max(b - a, 0) / total) * 100}%`;
 	}
-
-	/** The assignments as bars on the language lane, so the slot changes show. */
-	const languageBars = $derived(
-		assignments.map((item) => ({
-			id: `${item.language}-${item.from}`,
-			slot: item.slot,
-			name: languages.find((language) => language.id === item.language)?.name ?? item.language,
-			from: item.from,
-			to: item.to
-		}))
-	);
 
 	const vaultLink = (path: string) =>
 		`obsidian://open?vault=Yggdrasil&file=${encodeURIComponent(path)}`;
@@ -112,17 +116,8 @@
 				from={data.window.from}
 				to={data.window.to}
 				seasons={data.seasons}
-				blocks={[
-					...blocks.map((block) => ({ id: block.id, kind: block.kind, title: block.title, from: block.from, to: block.to })),
-					...languageBars
-						.map((bar) => ({
-							id: bar.id,
-							kind: `language${bar.slot === 'primary' ? '' : bar.slot === 'secondary' ? '-2' : '-3'}`,
-							title: bar.name,
-							from: bar.from,
-							to: bar.to
-						}))
-				]}
+				anchor={data.solstice}
+				{lanes}
 				{today}
 				marks={data.marks}
 			/>
@@ -139,36 +134,20 @@
 
 	<section class="strip">
 		{#each lanes as lane (lane.id)}
-			<div class="lane" class:empty={lane.length === 0}>
-				<p class="lane-name">{lane.name}</p>
+			<div class="lane" class:empty={lane.bars.length === 0}>
+				<p class="lane-name">{lane.label}</p>
 				<div class="rail">
-					{#each lane.bars as block (block.id)}
+					{#each lane.bars as bar (bar.id)}
 						<div
 							class="bar"
-							class:bar-live={live.some((item) => item.id === block.id)}
-							style={place(block.from, block.to)}
-						>
-							<span>{block.title}</span>
-							<span class="bar-weeks">{block.weeks}</span>
-						</div>
-					{/each}
-				</div>
-			</div>
-		{/each}
-
-		{#each ['primary', 'secondary', 'tertiary'] as slot, index (slot)}
-			{@const bars = languageBars.filter((bar) => bar.slot === slot)}
-			<div class="lane" class:empty={bars.length === 0}>
-				<p class="lane-name">language {index + 1}</p>
-				<div class="rail">
-					{#each bars as bar (bar.id)}
-						<div
-							class="bar bar-language"
+							class:bar-language={Boolean(lane.slot)}
 							class:bar-live={bar.from <= today && today <= bar.to}
 							style={place(bar.from, bar.to)}
 						>
-							<span>{bar.name}</span>
-							<span class="bar-weeks">{bar.to.slice(8)}/{bar.to.slice(5, 7)}</span>
+							<span>{bar.title}</span>
+							<span class="bar-weeks">{lane.slot
+									? `${bar.to.slice(8)}/${bar.to.slice(5, 7)}`
+									: weeks(bar.from, bar.to)}</span>
 						</div>
 					{/each}
 				</div>
@@ -192,13 +171,13 @@
 			<tbody>
 				{#each languages as language (language.id)}
 					{@const held = holding.get(language.id) ?? null}
-					<tr class:off={!held || held.slot === 'tertiary'}>
+					<tr class:off={!held}>
 						<td class="cell-name">{language.name}</td>
 						<td>{language.level}</td>
 						<td class="dim">{language.state || '-'}</td>
 						<td>{language.aim}</td>
 						<td>{language.stage}</td>
-						<td class="dim">{held?.slot ?? 'tertiary'}</td>
+						<td class="dim">{held?.slot ?? '-'}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -286,6 +265,7 @@
 	}
 
 	.ring-note .ko {
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
 		font-size: clamp(1.4rem, 2.4vw, 2rem);
 		letter-spacing: 0.06em;
 		margin: 0.2rem 0 0.1rem;
@@ -302,7 +282,7 @@
 
 	.lane {
 		display: grid;
-		grid-template-columns: 6.5rem 1fr;
+		grid-template-columns: 9rem 1fr;
 		align-items: center;
 		gap: 1rem;
 		font-size: 0.84rem;

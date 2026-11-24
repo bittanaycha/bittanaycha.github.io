@@ -25,9 +25,7 @@ export const assignments = sqliteTable('assignments', {
 	language: text('language').notNull(),
 	slot: text('slot').notNull(),
 	from: text('from').notNull(),
-	to: text('to').notNull(),
-	dose: text('dose').notNull().default(''),
-	target: text('target').notNull().default('')
+	to: text('to').notNull()
 });
 
 export const blocks = sqliteTable('blocks', {
@@ -35,8 +33,6 @@ export const blocks = sqliteTable('blocks', {
 	kind: text('kind').notNull(),
 	title: text('title').notNull(),
 	detail: text('detail').notNull().default(''),
-	dose: text('dose').notNull().default(''),
-	target: text('target').notNull().default(''),
 	from: text('from').notNull(),
 	to: text('to').notNull()
 });
