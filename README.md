@@ -1,13 +1,14 @@
 # homepage
 
-A personal homepage, a marathon training page and a dithering studio. SvelteKit,
-fully prerendered, served as static files from GitHub Pages at
-<https://bittanaycha.github.io>. The page is printed on a photograph of leaves,
+A personal homepage, a marathon training page, a language and season wheel and a
+dithering studio. SvelteKit, fully prerendered, served as static files from GitHub
+Pages at <https://bittanaycha.github.io>. The page is printed on a photograph of leaves,
 with the day's almanac laid on it as separate blue cards; a pixel ship sails to
 whichever card the pointer is over.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
-`dither`, `running`, `google`, `wikipedia`, units) and the marathon plan's own data.
+`dither`, `running`, `languages`, `google`, `wikipedia`, units) and the data the
+vault already holds.
 
 ## Develop
 
@@ -34,12 +35,14 @@ npm run sync       # regenerate the day table and run log from the vault
 | `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
+| `src/routes/languages/+page.svelte` | Wheel page — the eight spokes, this season's roles, the language portfolio |
+| `src/lib/seasons.ts` | The wheel and the season roles, from `Seasons/plan.json`. Generated — see below |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
 | `src/lib/days.ts` | One row per plan day, from the week notes. Generated — see below |
 | `src/lib/log.ts` | Every run in the training log. Generated — see below |
 | `src/lib/sun.ts` | NOAA sunrise/sunset and the moon phase behind the almanac |
 | `src/lib/pace.ts` | VDOT, threshold pace and rep ranges |
-| `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts` and `log.ts` |
+| `scripts/sync-vault.mjs` | Reads the vault and writes `days.ts`, `log.ts` and `seasons.ts` |
 | `src/lib/format.ts` | Date helpers (all dates parsed at 12:00 local to dodge DST) |
 | `src/lib/studio/` | The dither engine: masks, inks, samples, worker, compositing |
 | `src/lib/dither/` | Ordered/blue-noise dither and the ink palettes |
@@ -85,7 +88,9 @@ anywhere public. Switch channels from the avatar menu.
 ### The vault
 
 The marathon plan and the training log live in the Obsidian vault at
-`~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Yggdrasil/Marathon/`.
+`~/Vaults/Yggdrasil/Marathon/`. The vault used to sit in iCloud Drive; Obsidian on
+Android cannot read that, so it is synced with Syncthing instead and lives outside
+any cloud folder. `YGDRASIL_VAULT` overrides the location.
 
 `src/lib/plan.ts` is copied across from `plan.json` by hand. The day-by-day table
 and the run log are generated from the vault:
@@ -95,10 +100,13 @@ npm run sync
 ```
 
 That reads `plan.json`, the day table in each `Weeks/Week NN.md`, and
-`Training Log.md`, then writes `src/lib/days.ts` and `src/lib/log.ts`. Set
-`YGDRASIL_VAULT` to read a different vault. The script exits non-zero on a
-weekday that does not match its date, a plan week with no note, or a run dated
-outside the plan weeks, so a broken table fails instead of quietly dropping rows.
+`Training Log.md`, then writes `src/lib/days.ts` and `src/lib/log.ts`. It also
+reads `Seasons/plan.json` and writes `src/lib/seasons.ts`. Set `YGDRASIL_VAULT`
+to read a different vault. The script exits non-zero on a weekday that does not
+match its date, a plan week with no note, a run dated outside the plan weeks, a
+season whose role names an unknown language, more than one active language or
+more than two anchors, or two seasons that overlap, so a broken table fails
+instead of quietly dropping rows.
 
 The training log is the source of truth: week 3 planned 28.0 km and logged 4.3 km,
 and the bars, the table and the totals all take the logged number from
@@ -107,6 +115,23 @@ and the bars, the table and the totals all take the logged number from
 The `/running` footer opens `plan.json`, the current week's note, the log and the
 gate weeks through `obsidian://` links, so the page is a way into the vault rather
 than a copy of it.
+
+### The seasons
+
+`~/Vaults/Yggdrasil/Seasons/` holds the year: `plan.json` (the wheel dates and one
+role per language per season), `Seasons Index.md` (the rules), `Next.md` (the
+parking lot) and `Reviews.md` (the Sunday log).
+
+A season runs from one quarter day to the next; a cross-quarter inside it is a
+gate where the primary is kept, cut or escalated but never swapped. `plan.json`
+carries one entry per season with `roles` for every language — `active`,
+`secondary`, `anchor` or `dormant` — and the page reads them unchanged. The eight
+spokes are named in Welsh: Alban Arthan, Gŵyl Fair y Canhwyllau, Alban Eilir,
+Calan Mai, Alban Hefin, Gŵyl Awst, Alban Elfed, Calan Gaeaf.
+
+The wheel dates are the astronomical instants for `Europe/Paris`, not the
+calendar date of the solstice in general: 21 Dec 2026 at 21:20 local, 20 Mar 2027
+at 21:32, and so on. The fire festivals stay on 1 Feb, 1 May, 1 Aug and 1 Nov.
 
 ## Deploying
 
