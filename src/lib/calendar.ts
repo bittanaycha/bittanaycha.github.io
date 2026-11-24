@@ -56,8 +56,11 @@ export function instantAt(longitude: number, from: number) {
 		return wrapped > 180 ? wrapped - 360 : wrapped;
 	};
 
-	// Jump most of the way first, then Newton the last few days.
-	let guess = from + (((target - sunLongitude(from)) % 360) + 360) / 360 * 365.2422 * DAY;
+	// Jump most of the way first, then Newton the last few days. The gap has to
+	// be normalised into (0, 360): a raw `%` leaves it negative when the target
+	// has already passed, and the jump then lands a year late.
+	const delta = (((target - sunLongitude(from)) % 360) + 360) % 360;
+	let guess = from + (delta / 360) * 365.2422 * DAY;
 
 	for (let i = 0; i < 10; i += 1) {
 		const gap = short(target - sunLongitude(guess));
@@ -111,6 +114,23 @@ const METEOROLOGICAL = [
  * order. Each system is generated for the same window so the picker can filter
  * by system without recomputing.
  */
+/**
+ * The instant in `year` at which the sun reaches `longitude`.
+ *
+ * `instantAt` only ever looks forward, so probing from 1 January would push the
+ * terms whose longitude has already passed (the first degrees of January and
+ * February) a whole year on, leaving those months empty. Probing from the middle
+ * of the previous December and stepping forward until the date is inside the
+ * year keeps one occurrence per term per year.
+ */
+function occurrenceIn(year: number, longitude: number) {
+	const start = Date.UTC(year, 0, 1);
+	const end = Date.UTC(year + 1, 0, 1);
+	let at = instantAt(longitude, Date.UTC(year - 1, 11, 15));
+	for (let step = 0; step < 3 && at < start; step += 1) at = instantAt(longitude, at + 40 * 86_400_000);
+	return at < end ? at : null;
+}
+
 export function marksFor(year: number): Mark[] {
 	const marks: Mark[] = [];
 	const start = Date.UTC(year, 0, 1);
@@ -168,8 +188,8 @@ export function marksFor(year: number): Mark[] {
 	}
 
 	for (const term of SEKKI) {
-		const at = instantAt(term.longitude, start);
-		if (at >= end) continue;
+		const at = occurrenceIn(year, term.longitude);
+		if (at === null) continue;
 		marks.push({
 			id: `sekki-${term.romaji}-${localDate(at).slice(0, 4)}`,
 			system: 'sekki',
@@ -182,8 +202,8 @@ export function marksFor(year: number): Mark[] {
 	}
 
 	for (const ko of KO) {
-		const at = instantAt(ko.longitude, start);
-		if (at >= end) continue;
+		const at = occurrenceIn(year, ko.longitude);
+		if (at === null) continue;
 		marks.push({
 			id: `ko-${ko.n}-${localDate(at).slice(0, 4)}`,
 			system: 'ko',

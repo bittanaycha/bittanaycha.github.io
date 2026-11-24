@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Ring from '#lib/components/Ring.svelte';
-	import { dotted, isoDay, shortDate } from '#lib/format';
+	import { isoDay, shortDate } from '#lib/format';
 	import { KINDS, SLOTS, type Assignment } from '#lib/plan-rules';
 
 	let { data } = $props();
@@ -99,6 +99,7 @@
 	<h1 class="sr-only">seasons - {data.seasonName?.toLowerCase() ?? 'the year'}</h1>
 
 	<section class="ring-card">
+		<div class="ring-wrap">
 		{#if data.ready}
 			<Ring
 				from={data.window.from}
@@ -120,40 +121,14 @@
 				marks={data.marks}
 			/>
 		{/if}
+		</div>
 		<div class="ring-note">
 			{#if data.ready && data.ko}
 				<p class="tag">this kō</p>
 				<p class="ko">{data.ko.name}</p>
 				<p class="dim">{data.ko.detail}</p>
 			{/if}
-			{#if data.ready}
-				<p class="dim">
-					{dotted(data.window.from)} to {dotted(data.window.to)} - 24 sekki and 72 kō on the rim
-				</p>
-			{/if}
 		</div>
-	</section>
-
-	<section class="slots">
-		{#each SLOTS as slot (slot)}
-			<div class="slot" class:slot-dim={slot === 'tertiary'}>
-				<p class="tag">{slot}</p>
-				{#each bySlot[slot] as held (held.language)}
-					<p class="slot-name">{held.name}</p>
-					{#if held.assignment}
-						<p class="dim">{held.assignment.dose || '-'}</p>
-						<p class="dim">{held.assignment.target || '-'}</p>
-						<p class="dim slot-dates">
-							{shortDate(held.assignment.from)} - {shortDate(held.assignment.to)}
-						</p>
-					{:else}
-						<p class="dim">maintenance only</p>
-					{/if}
-				{:else}
-					<p class="slot-name dim">-</p>
-				{/each}
-			</div>
-		{/each}
 	</section>
 
 	<section class="strip">
@@ -207,22 +182,7 @@
 	</section>
 
 	<section class="panel">
-		<p class="tag">running now</p>
-		<ul class="live">
-			{#each live as block (block.id)}
-				<li>
-					<span class="code">{block.kind}</span>
-					<span class="name">{block.title}</span>
-					<span class="dim">{shortDate(block.from)} - {shortDate(block.to)}</span>
-					<span class="dim">day {span(block.from, today) + 1} of {block.weeks * 7}</span>
-					{#if block.dose}<span class="dim">{block.dose}</span>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	<section class="panel">
-		<p class="tag">languages - one primary, one secondary, the rest maintenance</p>
+		<p class="tag">languages</p>
 		<table>
 			<thead>
 				<tr>
@@ -232,8 +192,6 @@
 					<th>aim</th>
 					<th>stage</th>
 					<th>now</th>
-					<th>dose</th>
-					<th>target</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -246,8 +204,6 @@
 						<td>{language.aim}</td>
 						<td>{language.stage}</td>
 						<td class="dim">{held?.slot ?? 'tertiary'}</td>
-						<td>{held?.dose || '-'}</td>
-						<td>{held?.target || '-'}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -255,20 +211,8 @@
 	</section>
 
 	<section class="panel">
-		<p class="tag">how this is set</p>
-		<p class="note">
-			Six languages, three slots: one primary, one secondary, the rest maintenance. The slots carry
-			dates, so the year can be planned. Running, music and study are seasons instead: a kind, a
-			name and two dates, as long or as short as the thing is. Start and end can be set on the ring,
-			or snapped to a quarter day, a fire festival, a meteorological season or any of the 24 sekki
-			and 72 kō.
-			{#if data.editor}
-				<a href="/seasons/edit">Edit the plan</a>.
-			{:else}
-				The plan is yours to read.
-			{/if}
-		</p>
 		<ul class="links">
+			<li><a href="/seasons/edit">{data.editor ? 'edit' : 'edit the plan'}</a></li>
 			<li><a href={vaultLink('Seasons/Seasons Index.md')}>seasons index</a></li>
 			<li><a href={vaultLink('Seasons/Next.md')}>next</a></li>
 			<li><a href={vaultLink('Seasons/Reviews.md')}>reviews</a></li>
@@ -326,13 +270,19 @@
 	}
 
 	.ring-card {
-		display: grid;
-		grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
+		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		column-gap: clamp(1rem, 3vw, 2.5rem);
+		gap: clamp(1rem, 2.5vw, 2.5rem);
 		border-bottom: 1px solid var(--rule);
 		padding-bottom: 1.6rem;
 		margin-bottom: 1.6rem;
+	}
+
+	.ring-wrap {
+		flex: 1 1 100%;
+		max-width: 60rem;
+		margin-inline: auto;
 	}
 
 	.ring-note {
@@ -435,30 +385,6 @@
 		padding-top: 1rem;
 	}
 
-	.live {
-		list-style: none;
-		margin: 0.8rem 0 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.live li {
-		display: grid;
-		grid-template-columns: 5.5rem 9rem 9rem 7rem 1fr;
-		gap: 0.8rem;
-		font-size: 0.86rem;
-		align-items: baseline;
-	}
-
-	.code {
-		color: var(--faint);
-		text-transform: uppercase;
-		font-size: 0.7rem;
-		letter-spacing: 0.1em;
-	}
-
 	.off {
 		color: var(--faint);
 	}
@@ -494,14 +420,6 @@
 
 	.cell-name {
 		white-space: nowrap;
-	}
-
-	.note {
-		margin: 0.8rem 0 0;
-		max-width: 46rem;
-		font-size: 0.88rem;
-		line-height: 1.55;
-		color: var(--dim);
 	}
 
 	:global(code) {
@@ -540,30 +458,13 @@
 			margin-top: 1rem;
 		}
 
-		.ring-card {
-			grid-template-columns: minmax(0, 1fr);
-			row-gap: 1.2rem;
-		}
-
-		.slots {
-			grid-template-columns: minmax(0, 1fr);
-			row-gap: 1.2rem;
+		.ring-wrap {
+			flex-basis: 100%;
 		}
 
 		.lane {
 			grid-template-columns: 1fr;
 			gap: 0.3rem;
-		}
-
-		.live li {
-			grid-template-columns: 4.6rem 1fr;
-			row-gap: 0.1rem;
-		}
-
-		.live li > :nth-child(3),
-		.live li > :nth-child(4),
-		.live li > :nth-child(5) {
-			grid-column: 1 / -1;
 		}
 
 		table {
@@ -580,31 +481,6 @@
 		table td:nth-child(6) {
 			display: none;
 		}
-	}
-	.slots {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: clamp(1rem, 2.5vw, 2rem);
-		border-bottom: 1px solid var(--rule);
-		padding-bottom: 1.5rem;
-	}
-
-	.slot p {
-		margin: 0.1rem 0;
-	}
-
-	.slot-name {
-		font-size: 1.2rem;
-		letter-spacing: 0.06em;
-		margin-top: 0.35rem !important;
-	}
-
-	.slot-dim {
-		opacity: 0.55;
-	}
-
-	.slot-dates {
-		margin-top: 0.35rem !important;
 	}
 
 	.bar-language {

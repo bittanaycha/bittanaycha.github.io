@@ -10,7 +10,7 @@
 		type Block,
 		type Language
 	} from '#lib/plan-rules';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
 
@@ -25,6 +25,10 @@
 	let assignments = $state<Assignment[]>(data.plan.assignments.map((item) => ({ ...item })));
 	// svelte-ignore state_referenced_locally
 	let languages = $state<Language[]>(data.plan.languages.map((language) => ({ ...language })));
+
+	let passphrase = $state('');
+	let unlocking = $state(false);
+	let unlockError = $state('');
 
 	let problems = $state<string[]>([]);
 	let message = $state('');
@@ -208,6 +212,23 @@
 			saving = false;
 		}
 	}
+
+	async function unlock(event: SubmitEvent) {
+		event.preventDefault();
+		unlocking = true;
+		unlockError = '';
+		const response = await fetch('/api/login', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ passphrase })
+		});
+		unlocking = false;
+		if (response.ok) {
+			await invalidateAll();
+			return;
+		}
+		unlockError = 'that passphrase is not the one';
+	}
 </script>
 
 <svelte:head>
@@ -216,6 +237,31 @@
 </svelte:head>
 
 <main class="edit">
+	{#if data.locked}
+		<header class="now">
+			<div>
+				<p class="tag">seasons / edit</p>
+				<h1>the plan</h1>
+				<p class="line">The passphrase opens the editor.</p>
+			</div>
+			<div class="actions">
+				<a href="/seasons">back</a>
+			</div>
+		</header>
+
+		<form class="unlock" onsubmit={unlock}>
+			<label for="passphrase">passphrase</label>
+			<input
+				id="passphrase"
+				type="password"
+				bind:value={passphrase}
+				autocomplete="current-password"
+				required
+			/>
+			<button type="submit" disabled={unlocking}>{unlocking ? 'checking' : 'unlock'}</button>
+			{#if unlockError}<p class="problems">{unlockError}</p>{/if}
+		</form>
+	{:else}
 	<header class="now">
 		<div>
 			<p class="tag">seasons / edit</p>
@@ -426,6 +472,7 @@
 			</tbody>
 		</table>
 	</section>
+{/if}
 </main>
 
 <style>
@@ -476,6 +523,28 @@
 		color: rgb(255 255 255 / 0.7);
 		margin: 0;
 		max-width: 46rem;
+	}
+
+	.unlock {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.8rem;
+		margin: 0 0 2rem;
+		font-size: 0.8rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+	}
+
+	.unlock input {
+		flex: 1 1 14rem;
+		max-width: 22rem;
+		padding: 0.5rem 0.6rem;
+		border: 1px solid rgb(255 255 255 / 0.3);
+		background: #000;
+		color: var(--ink);
+		font: inherit;
+		letter-spacing: 0.08em;
 	}
 
 	.actions {

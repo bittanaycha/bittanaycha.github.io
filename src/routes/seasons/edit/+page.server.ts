@@ -6,11 +6,12 @@ import type { PageServerLoad } from './$types';
 
 export const prerender = false;
 
-export const load: PageServerLoad = async ({ platform, locals, url }) => {
-	if (!locals.editor) redirect(303, `/seasons?from=${url.pathname}`);
-
+// The plan on this page is the same plan the public page reads, so a visitor
+// without the passphrase can still see it. Only saving is refused; the page
+// renders the passphrase field instead of the form.
+export const load: PageServerLoad = async ({ platform, locals }) => {
 	const db = databaseOf(platform);
 	if (!db) redirect(303, '/seasons');
 
-	return { plan: await readPlan(db), today: localDate(Date.now()) };
+	return { plan: await readPlan(db), today: localDate(Date.now()), locked: !locals.editor };
 };

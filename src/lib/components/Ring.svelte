@@ -32,14 +32,18 @@
 		onpick?: (date: string) => void;
 	} = $props();
 
-	const SIZE = 420;
+	// The canvas is bigger than the wheel: the 72 kō need the ring outside it.
+	// Everything below scales with RIM, so the wheel stays a circle of the same
+	// proportions whatever the page gives it.
+	const SIZE = 800;
 	const C = SIZE / 2;
-	const RIM = 196;
-	const BAND = 172;
-	const TICK = 166;
-	const MONTH = 156;
-	const RINGS: Record<string, number> = { running: 138, music: 124, study: 110, language: 96, 'language-2': 82 };
-	const WIDTH = 9;
+	const RIM = 300;
+	const BAND = 263;
+	const TICK = 254;
+	const MONTH = 239;
+	const RINGS: Record<string, number> = { running: 211, music: 190, study: 168, language: 147, 'language-2': 125 };
+	const WIDTH = 14;
+	const GLYPH = 13.5;
 
 	const day = (iso: string) => new Date(`${iso}T12:00:00Z`).getTime();
 	const DAY = 86_400_000;
@@ -120,6 +124,17 @@
 
 	const weeks = (block: Block) => Math.round((day(block.to) - day(block.from) + DAY) / (7 * DAY));
 
+	const left = (block: Block) => Math.round((day(block.to) - day(today)) / DAY);
+
+	/** How the band stands today: days to go, days until it starts, or done. */
+	function standing(block: Block) {
+		if (today < block.from) return `starts in ${Math.round((day(block.from) - day(today)) / DAY)} days`;
+		const days = left(block);
+		if (days < 0) return 'done';
+		if (days === 0) return 'last day';
+		return `${days} days left`;
+	}
+
 	function shortDate(iso: string) {
 		return new Date(`${iso}T12:00:00Z`)
 			.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' })
@@ -155,7 +170,7 @@
 	<svg
 		class="ring"
 		class:pickable={Boolean(onpick)}
-		viewBox="-52 -52 524 524"
+		viewBox="0 0 800 800"
 		aria-hidden="true"
 		onmouseleave={hide}
 	>
@@ -163,7 +178,7 @@
 
 	{#each seasons as season (season.name + season.from)}
 		<path
-			d={arc(BAND + 10, angle(season.from), angle(season.to))}
+			d={arc(BAND + 22, angle(season.from), angle(season.to))}
 			stroke={tone(season.name)}
 			class="season"
 			onmouseenter={(event) =>
@@ -180,27 +195,27 @@
 
 	{#each sekki as mark (mark.id)}
 		<line
-			x1={polar(RIM - 2, angle(mark.date))[0]}
-			y1={polar(RIM - 2, angle(mark.date))[1]}
-			x2={polar(TICK - 2, angle(mark.date))[0]}
-			y2={polar(TICK - 2, angle(mark.date))[1]}
+			x1={polar(RIM - 3, angle(mark.date))[0]}
+			y1={polar(RIM - 3, angle(mark.date))[1]}
+			x2={polar(RIM - 22, angle(mark.date))[0]}
+			y2={polar(RIM - 22, angle(mark.date))[1]}
 			class="sekki"
 		/>
 	{/each}
 
 	{#each ko as mark (mark.id)}
 		<line
-			x1={polar(RIM - 2, angle(mark.date))[0]}
-			y1={polar(RIM - 2, angle(mark.date))[1]}
-			x2={polar(RIM - 6, angle(mark.date))[0]}
-			y2={polar(RIM - 6, angle(mark.date))[1]}
+			x1={polar(RIM - 3, angle(mark.date))[0]}
+			y1={polar(RIM - 3, angle(mark.date))[1]}
+			x2={polar(RIM - 11, angle(mark.date))[0]}
+			y2={polar(RIM - 11, angle(mark.date))[1]}
 			class="ko"
 		/>
 	{/each}
 
-	{#each ko as mark, turn (mark.id)}
+	{#each ko as mark (mark.id)}
 		{@const degrees = angle(mark.date)}
-		{@const outset = RIM + 9 + (turn % 2) * 11}
+		{@const outset = RIM + 22}
 		<g
 			class="ko-label"
 			role="presentation"
@@ -210,7 +225,7 @@
 			onmouseleave={hide}
 		>
 			{#each [...mark.name] as glyph, index (index)}
-				{@const [x, y] = polar(outset + index * 7.4, degrees)}
+				{@const [x, y] = polar(outset + index * GLYPH, degrees)}
 				<text x={x} y={y} class="ko-glyph" text-anchor="middle" dominant-baseline="middle">{glyph}</text>
 			{/each}
 		</g>
@@ -238,7 +253,7 @@
 				onmouseenter={(event) =>
 					show(event, {
 						head: `${block.kind} - ${block.title}`,
-						body: `${shortDate(block.from)} to ${shortDate(block.to)} - ${weeks(block)} weeks`,
+						body: `${shortDate(block.from)} to ${shortDate(block.to)} - ${weeks(block)} weeks - ${standing(block)}`,
 						tone: kindTone[block.kind] ?? 'var(--ink)'
 					})}
 				onmousemove={follow}
@@ -249,14 +264,14 @@
 	{/each}
 
 	<line
-		x1={polar(52, angle(today))[0]}
-		y1={polar(52, angle(today))[1]}
-		x2={polar(RIM - 1, angle(today))[0]}
-		y2={polar(RIM - 1, angle(today))[1]}
+		x1={polar(78, angle(today))[0]}
+		y1={polar(78, angle(today))[1]}
+		x2={polar(RIM - 4, angle(today))[0]}
+		y2={polar(RIM - 4, angle(today))[1]}
 		class="hand"
 	/>
-	<circle cx={polar(RIM + 4, angle(today))[0]} cy={polar(RIM + 4, angle(today))[1]} r="3.5" class="dot" />
-	<circle cx={C} cy={C} r="44" class="hub" />
+	<circle cx={polar(RIM + 7, angle(today))[0]} cy={polar(RIM + 7, angle(today))[1]} r="5" class="dot" />
+	<circle cx={C} cy={C} r="66" class="hub" />
 	</svg>
 
 	{#if tip}
@@ -302,33 +317,34 @@
 
 	.season {
 		fill: none;
-		stroke-width: 14;
+		stroke-width: 22;
 		opacity: 0.55;
 	}
 
 	.sekki {
 		stroke: var(--ink);
-		stroke-width: 0.9;
+		stroke-width: 1.6;
 		opacity: 0.5;
 	}
 
 	.ko {
 		stroke: var(--ink);
-		stroke-width: 0.6;
+		stroke-width: 1;
 		opacity: 0.28;
 	}
 
 	.month {
 		fill: var(--dim);
-		font-size: 8px;
+		font-size: 13px;
 		letter-spacing: 0.08em;
 	}
 
 	.ko-glyph {
 		fill: var(--ink);
-		fill-opacity: 0.72;
-		font-size: 8px;
-		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+		fill-opacity: 0.8;
+		font-size: 12.5px;
+		font-family: 'Hiragino Mincho ProN', 'YuMincho', 'Yu Mincho', 'Songti SC', 'Noto Serif JP', serif;
+		letter-spacing: 0;
 	}
 
 	.ko-label:hover .ko-glyph {
@@ -345,14 +361,14 @@
 
 	.block {
 		fill: none;
-		stroke-width: 9;
+		stroke-width: 14;
 		stroke-linecap: butt;
 		pointer-events: stroke;
 		cursor: default;
 	}
 
 	.block:hover {
-		stroke-width: 13;
+		stroke-width: 20;
 	}
 
 	.block.dim {
@@ -365,7 +381,7 @@
 
 	.hand {
 		stroke: var(--ink);
-		stroke-width: 1;
+		stroke-width: 1.6;
 		opacity: 0.75;
 	}
 
