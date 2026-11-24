@@ -47,9 +47,13 @@
 	const end = $derived(day(to));
 	const total = $derived(end - start);
 
-	/** 0 at the top of the circle, clockwise, as a fraction of the window. */
+	/**
+	 * Degrees clockwise from the window's first day. The window starts at the
+	 * winter solstice, and that point sits at the left of the circle: the year
+	 * turns from 9 o'clock through 12 to 3 and round to 6.
+	 */
 	function angle(date: string) {
-		return ((day(date) - start) / total) * 360 - 90;
+		return ((day(date) - start) / total) * 360 + 180;
 	}
 
 	const polar = (radius: number, degrees: number) => {

@@ -32,6 +32,7 @@ export type Language = {
 	level: string;
 	aim: string;
 	stage: string;
+	state: string;
 };
 
 /** One language holding one slot for a stretch of the year. */

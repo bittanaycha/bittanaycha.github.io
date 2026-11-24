@@ -25,7 +25,8 @@ export async function readPlan(db: Binding): Promise<Plan> {
 			name: row.name,
 			level: row.level,
 			aim: row.aim,
-			stage: row.stage
+			stage: row.stage,
+			state: row.state
 		})),
 		assignments: assignmentRows.map((row): Assignment => ({
 			language: row.language,
@@ -75,6 +76,7 @@ export async function writePlan(db: Binding, plan: Plan) {
 				level: language.level ?? '',
 				aim: language.aim ?? '',
 				stage: language.stage ?? '',
+				state: language.state ?? '',
 				position: index
 			})
 		),

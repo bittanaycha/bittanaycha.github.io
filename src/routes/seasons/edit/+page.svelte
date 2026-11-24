@@ -411,13 +411,14 @@
 		<p class="tag">languages</p>
 		<table>
 			<thead>
-				<tr><th>name</th><th>level</th><th>aim</th><th>stage</th></tr>
+				<tr><th>name</th><th>level</th><th>state</th><th>aim</th><th>stage</th></tr>
 			</thead>
 			<tbody>
 				{#each languages as language (language.id)}
 					<tr>
 						<td><input value={language.name} oninput={(e) => (language.name = e.currentTarget.value)} /></td>
 						<td><input value={language.level} oninput={(e) => (language.level = e.currentTarget.value)} /></td>
+						<td><input value={language.state} oninput={(e) => (language.state = e.currentTarget.value)} /></td>
 						<td><input value={language.aim} oninput={(e) => (language.aim = e.currentTarget.value)} /></td>
 						<td><input value={language.stage} oninput={(e) => (language.stage = e.currentTarget.value)} /></td>
 					</tr>

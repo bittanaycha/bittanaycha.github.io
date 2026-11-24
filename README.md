@@ -159,6 +159,11 @@ must match the Worker's secret.
 
 ### The ring and the dates
 
+The ring is one turn of the year and puts the winter solstice at its leftmost
+point, so the year runs from 9 o'clock clockwise: spring at the top, summer at the
+right, autumn at the bottom. Everything on the wheel — season bands, blocks, kō
+ticks, today's hand — is placed by that same mapping.
+
 `src/lib/calendar.ts` computes the quarter days from the sun's apparent
 longitude (Meeus, low precision — the instants land within a minute or so of the
 published ones) and converts them to local dates in `Europe/Paris`. The four

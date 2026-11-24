@@ -106,7 +106,7 @@
 	<header class="now">
 		<div>
 			<p class="tag">seasons</p>
-			<h1>{season ? season.name.toLowerCase() : 'plan'}</h1>
+			<h1>{data.seasonName?.toLowerCase() ?? 'the year'}</h1>
 			<p class="line">
 				{shortDate(today)} - {live.length} season{live.length === 1 ? '' : 's'} live - next change in
 				{nextChange} days
@@ -208,22 +208,24 @@
 			</div>
 		{/each}
 
-		<div class="lane" class:empty={languageBars.length === 0}>
-			<p class="lane-name">language</p>
-			<div class="rail">
-				{#each languageBars as bar (bar.id)}
-					<div
-						class="bar bar-language"
-						class:bar-live={bar.from <= today && today <= bar.to}
-						class:bar-tertiary={bar.slot === 'tertiary'}
-						style={place(bar.from, bar.to)}
-					>
-						<span>{bar.name}</span>
-						<span class="bar-weeks">{bar.slot}</span>
-					</div>
-				{/each}
+		{#each ['primary', 'secondary'] as slot (slot)}
+			{@const bars = languageBars.filter((bar) => bar.slot === slot)}
+			<div class="lane" class:empty={bars.length === 0}>
+				<p class="lane-name">language {slot === 'primary' ? '1' : '2'}</p>
+				<div class="rail">
+					{#each bars as bar (bar.id)}
+						<div
+							class="bar bar-language"
+							class:bar-live={bar.from <= today && today <= bar.to}
+							style={place(bar.from, bar.to)}
+						>
+							<span>{bar.name}</span>
+							<span class="bar-weeks">{bar.to.slice(5)}</span>
+						</div>
+					{/each}
+				</div>
 			</div>
-		</div>
+		{/each}
 	</section>
 
 	<section class="panel">
@@ -248,6 +250,7 @@
 				<tr>
 					<th>language</th>
 					<th>level</th>
+					<th>state</th>
 					<th>aim</th>
 					<th>stage</th>
 					<th>now</th>
@@ -261,6 +264,7 @@
 					<tr class:off={!held || held.slot === 'tertiary'}>
 						<td class="cell-name">{language.name}</td>
 						<td>{language.level}</td>
+						<td class="dim">{language.state || '-'}</td>
 						<td>{language.aim}</td>
 						<td>{language.stage}</td>
 						<td class="dim">{held?.slot ?? 'tertiary'}</td>
@@ -692,10 +696,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-
-	.bar-tertiary {
-		opacity: 0.4;
 	}
 
 </style>

@@ -67,7 +67,7 @@ if (mode === 'pull') {
 	const text = `${JSON.stringify(plan, null, '\t')}\n`;
 	writeFileSync(planPath, text);
 	writeJson(receiptPath, { pulled_at: new Date().toISOString(), server_updated: plan.updated, hash: hash(text) });
-	console.log(`pulled ${plan.blocks.length} blocks, ${plan.languages.length} languages, ${plan.anchors.length} anchors`);
+	console.log(`pulled ${plan.blocks.length} seasons, ${plan.languages.length} languages, ${plan.assignments.length} slots`);
 	console.log(`wrote  ${planPath}`);
 	process.exit(0);
 }
@@ -115,4 +115,4 @@ writeJson(receiptPath, {
 	server_updated: body.written.updated,
 	hash: localHash
 });
-console.log(`pushed ${local.blocks.length} blocks, ${local.languages.length} languages, ${local.anchors.length} anchors`);
+console.log(`pushed ${local.blocks.length} seasons, ${local.languages.length} languages, ${local.assignments.length} slots`);

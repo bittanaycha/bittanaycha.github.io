@@ -15,6 +15,7 @@ export const languages = sqliteTable('languages', {
 	level: text('level').notNull().default(''),
 	aim: text('aim').notNull().default(''),
 	stage: text('stage').notNull().default(''),
+	state: text('state').notNull().default(''),
 	position: integer('position').notNull().default(0)
 });
 

@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 			editor: locals.editor,
 			today,
 			window: { from: today, to: today },
+			seasonName: 'the year',
 			seasons: [],
 			languages: [],
 			assignments: [],
@@ -29,18 +30,32 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	const plan = await readPlan(db);
 	const year = Number(today.slice(0, 4));
 
-	// The ring runs from the quarter day we are in, to the same one a year on.
+	// The ring is one turn of the year, from the winter solstice to the next, so
+	// the solstice sits at the wheel's leftmost point. The season in the header is
+	// the quarter we are actually in, which need not be inside that window.
 	const marks = [...marksFor(year), ...marksFor(year + 1)];
 	const quarters = marks
 		.filter((mark) => mark.system === 'astronomical')
 		.sort((a, b) => (a.date < b.date ? -1 : 1));
-	const opening = quarters.filter((mark) => mark.date <= today).at(-1) ?? quarters[0];
+	// The ring and the strip both start at the winter solstice, which the wheel
+	// puts at its leftmost point.
+	const solstices = quarters.filter((mark) => mark.name.toLowerCase().includes('winter'));
+	const opening = solstices.find((mark) => mark.date > today) ?? solstices[0];
 	const closing =
-		quarters.find(
+		solstices.find(
 			(mark) => mark.date > opening.date && mark.date.slice(5) === opening.date.slice(5)
-		) ?? quarters[4];
+		) ?? solstices[solstices.length - 1];
 
 	const inWindow = marks.filter((mark) => mark.date >= opening.date && mark.date < closing.date);
+
+	const allMarks = [...marksFor(year - 1), ...marksFor(year), ...marksFor(year + 1)].sort((a, b) =>
+		a.date < b.date ? -1 : 1
+	);
+
+	// Today's kō comes from the whole almanac, not from the window: the window
+	// starts at the next solstice, so its first kō is a month away.
+	const koNow = allMarks.filter((mark) => mark.system === 'ko' && mark.date <= today).at(-1);
+	const current = koNow ?? inWindow.find((mark) => mark.system === 'ko') ?? null;
 
 	const seasons = quarters
 		.filter((mark) => mark.date >= opening.date && mark.date < closing.date)
@@ -52,14 +67,17 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 			to: all[index + 1]?.date ?? closing.date
 		}));
 
-	const ko = inWindow.filter((mark) => mark.system === 'ko');
-	const current = ko.filter((mark) => mark.date <= today).at(-1) ?? ko[ko.length - 1];
+
+	// Which quarter day opened the season we are standing in.
+	const allQuarters = allMarks.filter((mark) => mark.system === 'astronomical');
+	const quarter = allQuarters.filter((mark) => mark.date <= today).at(-1) ?? allQuarters[0];
 
 	return {
 		ready: true as const,
 		editor: locals.editor,
 		today,
 		window: { from: opening.date, to: closing.date },
+		seasonName: quarter.name.split(' ')[0],
 		seasons,
 		languages: plan.languages,
 		assignments: plan.assignments,
