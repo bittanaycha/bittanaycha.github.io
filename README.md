@@ -190,6 +190,9 @@ en dash and must not be used there.
 
 ### Deploying
 
+Live at <https://bittanaycha.tombinnie.workers.dev>; the database is `seasons` in
+D1, id `bc4254b5-6fdd-4606-8873-ec917a803c35`.
+
 `/seasons` reads D1 on every request, so the site runs as a Worker with the
 prerendered build as static assets: `@sveltejs/adapter-cloudflare` builds it and
 `wrangler.jsonc` binds `ASSETS` and `DB`. Cloudflare calls this Workers with
@@ -213,6 +216,10 @@ Two things to do by hand the first time:
   push would otherwise publish a static build where `/seasons` and `/api` do not
   exist. Do it after the Worker answers, or `bittanaycha.github.io/seasons` 404s
   in the meantime and the nav link on the live site goes nowhere.
+
+`PLAN_PASSPHRASE` is the password the editor asks for. To change it:
+`wrangler secret put PLAN_PASSPHRASE`, then update `.env` and `npm run push` once
+so the receipt matches the new database stamp.
 
 Local runs need the binding too: `npm run dev` emulates D1 from `wrangler.jsonc`
 and reads `.dev.vars`, which is `.dev.vars.example` copied and filled in.

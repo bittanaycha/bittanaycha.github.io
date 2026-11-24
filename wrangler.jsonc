@@ -11,7 +11,7 @@
 		{
 			"binding": "DB",
 			"database_name": "seasons",
-			"database_id": "00000000-0000-4000-8000-000000000000",
+			"database_id": "bc4254b5-6fdd-4606-8873-ec917a803c35",
 			"migrations_dir": "migrations"
 		}
 	]

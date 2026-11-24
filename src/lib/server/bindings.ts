@@ -1,16 +1,23 @@
-type Env = App.Platform['env'];
+import { env as cloudflareEnv } from 'cloudflare:workers';
 
 /**
- * In a deployed Worker the bindings arrive on `event.platform`. Under `vite dev`
- * the adapter keeps its proxy on `globalThis` instead, so read that as well.
+ * The Worker's bindings. `cloudflare:workers` is real in a deployed Worker and a
+ * proxy over `wrangler dev`'s bindings locally, which is why this import is the
+ * one to use in both. `platform.env` is what a request carries when the adapter
+ * hands it over, and it wins when it is there.
  */
-export function envOf(platform: App.Platform | undefined): Partial<Env> {
-	const proxy = (
-		globalThis as {
-			__sveltekit_cloudflare_platform?: { env?: Partial<Env> };
-		}
-	).__sveltekit_cloudflare_platform;
-	return platform?.env ?? proxy?.env ?? {};
+export function envOf(platform: App.Platform | undefined): Partial<App.Platform['env']> {
+	const fromPlatform = platform?.env;
+	if (fromPlatform && fromPlatform.DB) return fromPlatform;
+
+	try {
+		// The proxy throws on the first property read when there is no Worker
+		// behind it, which is exactly the prerender case.
+		const env = cloudflareEnv as unknown as Partial<App.Platform['env']>;
+		return env?.DB ? env : {};
+	} catch {
+		return {};
+	}
 }
 
 export function databaseOf(platform: App.Platform | undefined) {
