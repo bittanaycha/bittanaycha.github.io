@@ -7,7 +7,7 @@ with the day's almanac laid on it as separate blue cards; a pixel ship sails to
 whichever card the pointer is over.
 
 There is deliberately no copy on the site: the only words are labels (`index`,
-`dither`, `running`, `languages`, `google`, `wikipedia`, units) and the data the
+`dither`, `running`, `seasons`, `google`, `wikipedia`, units) and the data the
 vault already holds.
 
 ## Develop
@@ -35,8 +35,8 @@ npm run sync       # regenerate the day table and run log from the vault
 | `src/routes/+page.svelte` | Homepage — three search fields, the almanac, the outer links |
 | `src/routes/dither/+page.svelte` | Dither — the dithering studio (load, tune, save) |
 | `src/routes/running/+page.svelte` | Marathon page — today's session, plan/log/pace tabs, gates, table, vault links |
-| `src/routes/languages/+page.svelte` | Wheel page — the eight spokes, this season's roles, the language portfolio |
-| `src/lib/seasons.ts` | The wheel and the season roles, from `Seasons/plan.json`. Generated — see below |
+| `src/routes/seasons/+page.svelte` | Blocks as bars: running, music, languages and study, and the language roles |
+| `src/lib/seasons.ts` | The blocks, the languages and the anchors, from `Seasons/plan.json`. Generated — see below |
 | `src/lib/plan.ts` | The 26-week plan: weeks, gates, totals, race. Edited by hand |
 | `src/lib/days.ts` | One row per plan day, from the week notes. Generated — see below |
 | `src/lib/log.ts` | Every run in the training log. Generated — see below |
@@ -118,89 +118,23 @@ than a copy of it.
 
 ### The seasons
 
-`~/Vaults/Yggdrasil/Seasons/` holds the year: `plan.json` (the wheel dates and one
-role per language per season), `Seasons Index.md` (the rules), `Next.md` (the
-parking lot) and `Reviews.md` (the Sunday log).
+`~/Vaults/Yggdrasil/Seasons/` holds the plan: `plan.json` (blocks, languages,
+anchors), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
+`Reviews.md` (the Sunday log).
 
-A season runs from one quarter day to the next; a cross-quarter inside it is a
-gate where the primary is kept, cut or escalated but never swapped. `plan.json`
-carries one entry per season with `roles` for every language — `active`,
-`secondary`, `anchor` or `dormant` — and the page reads them unchanged. The eight
-spokes are named in Welsh: Alban Arthan, Gŵyl Fair y Canhwyllau, Alban Eilir,
-Calan Mai, Alban Hefin, Gŵyl Awst, Alban Elfed, Calan Gaeaf.
+A **block** is a title, a start date and a number of weeks. Blocks of different
+kinds run at the same time — running, music, one language, one study subject —
+and two blocks of the same kind may not overlap. Only one language is ever
+active; the rest are anchors (a fixed small dose) or dormant. The end date is
+never stored: `to` is `from + weeks * 7 - 1`, so a block is one number to change.
 
-The wheel dates are the astronomical instants for `Europe/Paris`, not the
-calendar date of the solstice in general: 21 Dec 2026 at 21:20 local, 20 Mar 2027
-at 21:32, and so on. The fire festivals stay on 1 Feb, 1 May, 1 Aug and 1 Nov.
+The four seasons are only the backdrop on the strip, named Spring, Summer, Autumn
+and Winter. Their boundaries are the astronomical instants for `Europe/Paris`,
+not the calendar date in general: 21 Dec 2026 at 21:20 local, 20 Mar 2027 at
+21:32, and so on.
 
-## Deploying
-
-`.github/workflows/deploy.yml` builds on every push to `main` and publishes to
-Pages through `actions/deploy-pages`.
-
-- **User site** — this repo is `bittanaycha.github.io`, so `BASE_PATH` stays unset
-  and the site lives at the root.
-- **Project site** — set the repo variable `BASE_PATH` to `/<repo>`.
-
-Note: creating a `<user>.github.io` repo makes GitHub provision Pages in *legacy*
-(branch) mode. Set it to Actions mode once:
-
-```bash
-gh api -X PUT repos/bittanaycha/bittanaycha.github.io/pages -f build_type=workflow
-```
-
-## Notes
-
-- SvelteKit 3 removed the `$lib` alias — internal imports use `#lib` (see
-  `imports` in `package.json`). `$app/paths` now exports `asset()` and `resolve()`
-  instead of a `base` string, so links are `resolve('/running')` and assets are
-  `asset('/photos/…')`.
-- `/` focuses the google field.
-- Every search field clears once its query has gone to the new tab: the browser
-  builds the form's entry list right after the `submit` event, so the clear runs
-  in a `setTimeout(…, 0)` and does not empty the query before it is read.
-- The paper is the photograph in `static/background.png`, unfiltered, under a
-  `rgb(245 237 222 / 0.5)` wash. Ink on paper is `#2c1d10`.
-- A `static/` image can never be reached by `url()` written inside a `.css`
-  file: Vite copies the URL through untouched and the browser resolves it
-  against the hashed stylesheet, so it 404s on Pages while working in `dev`,
-  where the stylesheet is inlined into the page. Every picture the CSS paints
-  arrives as a custom property set from `asset()` in the markup — `--photo` on
-  `.sea`, `--plate` on the sun tag and the moon island.
-- Cards are the only surfaces: a `#3d75bb` wash with a `feTurbulence` grain
-  blended into it, uneven rounded corners, a soft brown drop shadow and
-  registration ticks just outside each corner. Their ink is cream (`#f7f2e6`);
-  the accent inside a card is yellow `#f4c95d` and red `#d9432f`.
-- Labels are sentence case ("Moon", not "MOON"). `.eyebrow.plain` opts out for
-  numbers and units ("26 weeks", "mm:ss or h:mm:ss").
-- The deck is full width with an asymmetric gutter (narrow left, wide right), so
-  the composition leans and the sea stays open on the right. Both pages place
-  every island on a 12-column chart with explicit column and row numbers rather
-  than stacking them. Row gaps and the deck's padding are in `vh`, so the index
-  deck closes inside one screen instead of dropping the moon island under the
-  fold.
-- `Ship.svelte` docks at the top-right of whichever island the pointer is over,
-  gliding in 900 ms, then tacks a few pixels against the current while it is
-  moored and drops fading pixels of wake behind it. `prefers-reduced-motion`
-  drops the glide, the tack and the bob.
-- The sun and moon are inline SVG (`AlmanacIcon.svelte`): a halftone dot pattern
-  fills the disc and the crescent, so they read as printed woodcuts rather than
-  icons. The moon sits in its own island below the two place strips.
-- The sun tag takes its dithered sunset full bleed. The moon island prints its
-  plate inside the card, to the right of the dates, inset by the card's own
-  padding; under 58rem the card has no clear corner left, so the same plate
-  becomes a wash behind the text instead.
-- Each place is a card holding its dithered photograph as a real `<img>`
-  (`object-fit: cover`): the name sits top-left, rise/set/day bottom-right. The
-  CSS `background: … cover` version failed to paint the home strip on Pages, so
-  the picture is an element.
-- The moon island reads the next full and new moon from Meeus's syzygy series
-  (`sun.ts`), and names the full moon: harvest for the one nearest the autumn
-  equinox, hunter's for the one after it, otherwise the month's farm name.
-- The engraved plates from the vault lie in the page margins, fixed to the
-  viewport: deer and swift on the index, hare on running, horse on dither. The
-  falcon is unused. They are hidden under 62rem, where there is no margin to
-  spare.
-- The almanac and today's session are computed in the browser (`onMount`), not at
-  build time: a prerendered page would freeze the day it was built.
-- No runtime dependencies, no server, no remote fonts or assets.
+`/seasons` sets the Nothing 5x7 dot font (`static/fonts/nothing-font-5x7.otf`,
+from fontstruct.com, installed by hand). Its cmap covers ASCII printable only, so
+every string on that page has to be ASCII: a hyphen where an en dash would read
+better, `-` for a middot, no arrows. `dateRange()` from `#lib/format` returns an
+en dash and must not be used there.

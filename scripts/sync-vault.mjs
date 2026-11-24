@@ -132,36 +132,17 @@ for (const run of runs) {
 
 // ------------------------------------------------------------------- seasons
 
-const ROLES = new Set(['active', 'secondary', 'anchor', 'dormant']);
+const DOMAINS = new Set(['running', 'music', 'language', 'study']);
+const MAX_ANCHORS = 2;
 
 const seasonsPlan = JSON.parse(read(join(vault, 'Seasons/plan.json')));
 
-const wheel = seasonsPlan.wheel;
-const languages = seasonsPlan.languages;
 const seasons = seasonsPlan.seasons;
-
-const spokeIds = new Set(wheel.map((spoke) => spoke.id));
-const languageIds = new Set(languages.map((language) => language.id));
+const languages = seasonsPlan.languages;
+const languageById = new Map(languages.map((language) => [language.id, language]));
 
 for (const season of seasons) {
-	if (!spokeIds.has(season.opens)) problems.push(`season ${season.id}: unknown opening spoke ${season.opens}`);
-	if (!spokeIds.has(season.closes)) problems.push(`season ${season.id}: unknown closing spoke ${season.closes}`);
 	if (season.from >= season.to) problems.push(`season ${season.id}: ends before it starts`);
-	if (season.gate && (season.gate.date <= season.from || season.gate.date >= season.to)) {
-		problems.push(`season ${season.id}: gate ${season.gate.date} falls outside the season`);
-	}
-
-	for (const [id, entry] of Object.entries(season.roles)) {
-		if (!languageIds.has(id)) problems.push(`season ${season.id}: unknown language ${id}`);
-		if (!ROLES.has(entry.role)) problems.push(`season ${season.id}/${id}: unknown role ${entry.role}`);
-	}
-	for (const id of languageIds) {
-		if (!season.roles[id]) problems.push(`season ${season.id}: no role for ${id}`);
-	}
-	const active = languages.filter((language) => season.roles[language.id]?.role === 'active');
-	if (active.length > 1) problems.push(`season ${season.id}: ${active.length} active languages`);
-	const anchors = languages.filter((language) => season.roles[language.id]?.role === 'anchor');
-	if (anchors.length > 2) problems.push(`season ${season.id}: ${anchors.length} anchors`);
 }
 
 seasons.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
@@ -169,59 +150,128 @@ for (let i = 1; i < seasons.length; i += 1) {
 	if (seasons[i].from < seasons[i - 1].to) problems.push(`seasons ${seasons[i - 1].id} and ${seasons[i].id} overlap`);
 }
 
+const DAY = 86_400_000;
+
+/** A block is one thing for a number of weeks. The end date is derived, never stored. */
+const blocks = (seasonsPlan.blocks ?? []).map((block) => {
+	const from = utc(block.from);
+	const weeks = Number(block.weeks);
+	const days = weeks * 7;
+
+	if (!DOMAINS.has(block.domain)) problems.push(`block ${block.id}: unknown domain ${block.domain}`);
+	if (!Number.isInteger(weeks) || weeks < 1) problems.push(`block ${block.id}: weeks must be a whole number, got ${block.weeks}`);
+	if (block.domain === 'language') {
+		if (!languageById.has(block.language)) problems.push(`block ${block.id}: unknown language ${block.language}`);
+	} else if (block.language) {
+		problems.push(`block ${block.id}: only a language block names a language`);
+	}
+
+	const to = new Date(from.getTime() + Math.max(days - 1, 0) * DAY);
+
+	return {
+		id: block.id,
+		domain: block.domain,
+		language: block.language ?? '',
+		title: block.title,
+		detail: block.detail ?? '',
+		dose: block.dose ?? '',
+		target: block.target ?? '',
+		from: iso(from),
+		to: iso(to),
+		weeks,
+		days
+	};
+});
+
+blocks.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
+
+// Different domains run at the same time — that is the point. The same domain
+// does not: one running block, one music block, one language block at a time.
+for (let i = 0; i < blocks.length; i += 1) {
+	for (let j = i + 1; j < blocks.length; j += 1) {
+		const a = blocks[i];
+		const b = blocks[j];
+		if (b.from > a.to) continue;
+		if (a.domain === b.domain) {
+			problems.push(`blocks ${a.id} and ${b.id} are both ${a.domain} and overlap`);
+		}
+	}
+}
+
+const anchors = (seasonsPlan.anchors ?? []).map((anchor) => {
+	if (!languageById.has(anchor.language)) problems.push(`anchor ${anchor.language}: unknown language`);
+	if (anchor.from >= anchor.to) problems.push(`anchor ${anchor.language}: ends before it starts`);
+	return {
+		language: anchor.language,
+		from: anchor.from,
+		to: anchor.to,
+		dose: anchor.dose ?? '',
+		target: anchor.target ?? ''
+	};
+});
+
+// Two anchors is the ceiling, and a language cannot be anchored while it is the
+// active one.
+const edges = [...new Set(anchors.flatMap((anchor) => [anchor.from, anchor.to]))].sort();
+for (const day of edges) {
+	const live = anchors.filter((anchor) => anchor.from <= day && day <= anchor.to);
+	if (live.length > MAX_ANCHORS) problems.push(`anchors: ${live.length} on ${day}, the ceiling is ${MAX_ANCHORS}`);
+	const active = blocks.find((block) => block.domain === 'language' && block.from <= day && day <= block.to);
+	if (active && live.some((anchor) => anchor.language === active.language)) {
+		problems.push(`${active.language} is anchored and active on ${day}`);
+	}
+}
+
 // ------------------------------------------------------------------- write
 
 const seasonsFile = `// Generated by scripts/sync-vault.mjs from Seasons/plan.json.
 // Do not edit by hand — change the vault and run \`npm run sync\`.
 
-export type Spoke = {
+export type Season = {
 	id: string;
 	name: string;
-	short: string;
-	kind: 'quarter' | 'cross';
-	label: string;
-	date: string;
-	time?: string;
+	from: string;
+	to: string;
 };
 
 export type Language = {
 	id: string;
 	name: string;
-	mark: string;
 	level: string;
 	aim: string;
 	stage: string;
 };
 
-export type Role = 'active' | 'secondary' | 'anchor' | 'dormant';
+export type Domain = 'running' | 'music' | 'language' | 'study';
 
-export type SeasonRole = {
-	role: Role;
+export type Block = {
+	id: string;
+	domain: Domain;
+	language: string;
+	title: string;
+	detail: string;
 	dose: string;
 	target: string;
-};
-
-export type Season = {
-	id: string;
-	kind: string;
-	opens: string;
-	closes: string;
 	from: string;
 	to: string;
-	gate: { spoke: string; date: string } | null;
-	primary: string;
-	roles: Record<string, SeasonRole>;
+	weeks: number;
+	days: number;
+};
+
+export type Anchor = {
+	language: string;
+	from: string;
+	to: string;
+	dose: string;
+	target: string;
 };
 
 export const updated = ${quote(seasonsPlan.updated)};
 export const timezone = ${quote(seasonsPlan.timezone ?? 'Europe/Paris')};
 
-export const wheel: Spoke[] = [
-${wheel
-	.map(
-		(spoke) =>
-			`\t{ id: ${quote(spoke.id)}, name: ${quote(spoke.name)}, short: ${quote(spoke.short)}, kind: ${quote(spoke.kind)}, label: ${quote(spoke.label)}, date: ${quote(spoke.date)}${spoke.time ? `, time: ${quote(spoke.time)}` : ''} },`
-	)
+export const seasons: Season[] = [
+${seasons
+	.map((season) => `\t{ id: ${quote(season.id)}, name: ${quote(season.name)}, from: ${quote(season.from)}, to: ${quote(season.to)} },`)
 	.join('\n')}
 ];
 
@@ -229,21 +279,25 @@ export const languages: Language[] = [
 ${languages
 	.map(
 		(language) =>
-			`\t{ id: ${quote(language.id)}, name: ${quote(language.name)}, mark: ${quote(language.mark)}, level: ${quote(language.level)}, aim: ${quote(language.aim)}, stage: ${quote(language.stage)} },`
+			`\t{ id: ${quote(language.id)}, name: ${quote(language.name)}, level: ${quote(language.level)}, aim: ${quote(language.aim)}, stage: ${quote(language.stage)} },`
 	)
 	.join('\n')}
 ];
 
-export const seasons: Season[] = [
-${seasons
+export const anchors: Anchor[] = [
+${anchors
 	.map(
-		(season) =>
-			`\t{\n\t\tid: ${quote(season.id)},\n\t\tkind: ${quote(season.kind)},\n\t\topens: ${quote(season.opens)},\n\t\tcloses: ${quote(season.closes)},\n\t\tfrom: ${quote(season.from)},\n\t\tto: ${quote(season.to)},\n\t\tgate: ${season.gate ? `{ spoke: ${quote(season.gate.spoke)}, date: ${quote(season.gate.date)} }` : 'null'},\n\t\tprimary: ${quote(season.primary)},\n\t\troles: {\n${Object.entries(season.roles)
-				.map(
-					([id, entry]) =>
-						`\t\t\t${id}: { role: ${quote(entry.role)}, dose: ${quote(entry.dose)}, target: ${quote(entry.target)} },`
-				)
-				.join('\n')}\n\t\t}\n\t},`
+		(anchor) =>
+			`\t{ language: ${quote(anchor.language)}, from: ${quote(anchor.from)}, to: ${quote(anchor.to)}, dose: ${quote(anchor.dose)}, target: ${quote(anchor.target)} },`
+	)
+	.join('\n')}
+];
+
+export const blocks: Block[] = [
+${blocks
+	.map(
+		(block) =>
+			`\t{\n\t\tid: ${quote(block.id)},\n\t\tdomain: ${quote(block.domain)},\n\t\tlanguage: ${quote(block.language)},\n\t\ttitle: ${quote(block.title)},\n\t\tdetail: ${quote(block.detail)},\n\t\tdose: ${quote(block.dose)},\n\t\ttarget: ${quote(block.target)},\n\t\tfrom: ${quote(block.from)},\n\t\tto: ${quote(block.to)},\n\t\tweeks: ${block.weeks},\n\t\tdays: ${block.days}\n\t},`
 	)
 	.join('\n')}
 ];
@@ -298,12 +352,10 @@ writeFileSync(join(root, 'src/lib/log.ts'), logFile);
 writeFileSync(join(root, 'src/lib/seasons.ts'), seasonsFile);
 
 const totalKm = runs.reduce((sum, run) => sum + run.km, 0);
-const active = languages.filter((language) => seasons.some((season) => season.roles[language.id].role === 'active'));
-console.log(`days  ${dayRows.length} rows, weeks ${plan.weeks.length}`);
-console.log(`runs  ${runs.length} rows, ${totalKm.toFixed(1)} km`);
-console.log(
-	`wheel ${wheel.length} spokes, ${seasons.length} seasons, ${languages.length} languages (${active.map((language) => language.name).join(', ')} active somewhere)`
-);
+const totalWeeks = blocks.reduce((sum, block) => sum + block.weeks, 0);
+console.log(`days   ${dayRows.length} rows, weeks ${plan.weeks.length}`);
+console.log(`runs   ${runs.length} rows, ${totalKm.toFixed(1)} km`);
+console.log(`blocks ${blocks.length} (${totalWeeks} weeks), ${seasons.length} seasons, ${languages.length} languages, ${anchors.length} anchors`);
 if (problems.length) {
 	console.log('\ncheck:');
 	for (const problem of problems) console.log(`  ${problem}`);

@@ -10,7 +10,7 @@
 
 	const titles: Record<string, string> = {
 		'/running': 'running',
-		'/languages': 'languages',
+		'/seasons': 'seasons',
 		'/dither': 'dither'
 	};
 	const title = $derived(titles[here] ?? 'index');
@@ -34,8 +34,8 @@
 				<a href={resolve('/running')} aria-current={here === '/running' ? 'page' : undefined}>
 					running
 				</a>
-				<a href={resolve('/languages')} aria-current={here === '/languages' ? 'page' : undefined}>
-					languages
+				<a href={resolve('/seasons')} aria-current={here === '/seasons' ? 'page' : undefined}>
+					seasons
 				</a>
 			</nav>
 		</div>
