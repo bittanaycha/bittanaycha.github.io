@@ -61,13 +61,6 @@
 
 	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
 
-	const nextChange = $derived.by(() => {
-		const dates = [...blocks, ...assignments]
-			.flatMap((row) => [row.from, row.to])
-			.filter((date) => date > today);
-		return dates.length ? Math.min(...dates.map((date) => span(today, date))) : 0;
-	});
-
 	function lane(kind: string) {
 		return blocks.filter((block) => block.kind === kind);
 	}
@@ -103,22 +96,7 @@
 </svelte:head>
 
 <main class="blocks">
-	<header class="now">
-		<div>
-			<p class="tag">seasons</p>
-			<h1>{data.seasonName?.toLowerCase() ?? 'the year'}</h1>
-			<p class="line">
-				{shortDate(today)} - {live.length} season{live.length === 1 ? '' : 's'} live - next change in
-				{nextChange} days
-			</p>
-		</div>
-		<div class="legend">
-			{#each KINDS as kind (kind)}
-				<span class="tag">{kind}</span>
-			{/each}
-			<span class="tag">language</span>
-		</div>
-	</header>
+	<h1 class="sr-only">seasons - {data.seasonName?.toLowerCase() ?? 'the year'}</h1>
 
 	<section class="ring-card">
 		{#if data.ready}
@@ -334,35 +312,13 @@
 		margin: 0;
 	}
 
-	.now {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 1.5rem;
-		border-bottom: 1px solid var(--rule);
-		padding-bottom: 1.1rem;
-	}
-
-	h1 {
-		font-family: inherit;
-		font-size: clamp(2.4rem, 6vw, 4rem);
-		font-weight: 400;
-		line-height: 0.95;
-		margin: 0.4rem 0 0.7rem;
-	}
-
-	.line {
-		margin: 0.15rem 0 0;
-		font-size: 0.92rem;
-		color: var(--dim);
-	}
-
-	.legend {
-		display: flex;
-		gap: 1rem;
-		flex-wrap: wrap;
-		justify-content: flex-end;
-		max-width: 18rem;
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.dim {
@@ -579,17 +535,6 @@
 	}
 
 	@media (max-width: 60rem) {
-		.now {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.8rem;
-		}
-
-		.legend {
-			justify-content: flex-start;
-			max-width: none;
-		}
-
 		.axis {
 			margin-left: 0;
 			margin-top: 1rem;
