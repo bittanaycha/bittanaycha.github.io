@@ -1,6 +1,6 @@
 import { databaseOf } from '#lib/server/bindings';
 import { readPlan } from '#lib/server/plan';
-import { localDate, marksFor } from '#lib/calendar';
+import { localDate, marksFor, yearWindow } from '#lib/calendar';
 import { weeks } from '#lib/plan-rules';
 import type { PageServerLoad } from './$types';
 
@@ -30,27 +30,31 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	const plan = await readPlan(db);
 	const year = Number(today.slice(0, 4));
 
-	// The ring is one turn of the year, from the winter solstice to the next, so
-	// the solstice sits at the wheel's leftmost point. The season in the header is
-	// the quarter we are actually in, which need not be inside that window.
-	const marks = [...marksFor(year), ...marksFor(year + 1)];
+	// The ring opens at the winter solstice on or before today, so the solstice
+	// sits at the wheel's leftmost point and today is inside the turn.
+	const turn = yearWindow(today);
+	const opening = { date: turn.from };
+	// A season that runs past the next solstice is stretched into the window
+	// rather than cut off at its edge.
+	const lastInPlan = [...plan.blocks.map((block) => block.to), ...plan.assignments.map((item) => item.to)]
+		.sort()
+		.at(-1);
+	const closing =
+		lastInPlan && lastInPlan > turn.to ? { date: lastInPlan } : { date: turn.to };
+
+	const marks = [
+		...marksFor(year - 1),
+		...marksFor(year),
+		...marksFor(year + 1),
+		...marksFor(year + 2)
+	];
 	const quarters = marks
 		.filter((mark) => mark.system === 'astronomical')
 		.sort((a, b) => (a.date < b.date ? -1 : 1));
-	// The ring and the strip both start at the winter solstice, which the wheel
-	// puts at its leftmost point.
-	const solstices = quarters.filter((mark) => mark.name.toLowerCase().includes('winter'));
-	const opening = solstices.find((mark) => mark.date > today) ?? solstices[0];
-	const closing =
-		solstices.find(
-			(mark) => mark.date > opening.date && mark.date.slice(5) === opening.date.slice(5)
-		) ?? solstices[solstices.length - 1];
 
 	const inWindow = marks.filter((mark) => mark.date >= opening.date && mark.date < closing.date);
 
-	const allMarks = [...marksFor(year - 1), ...marksFor(year), ...marksFor(year + 1)].sort((a, b) =>
-		a.date < b.date ? -1 : 1
-	);
+	const allMarks = [...marks].sort((a, b) => (a.date < b.date ? -1 : 1));
 
 	// Today's kō comes from the whole almanac, not from the window: the window
 	// starts at the next solstice, so its first kō is a month away.

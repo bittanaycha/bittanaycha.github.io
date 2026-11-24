@@ -6,6 +6,7 @@
 		SLOTS,
 		addDays,
 		days as countDays,
+		problems as planProblems,
 		weeks as countWeeks,
 		type Assignment,
 		type Block,
@@ -50,6 +51,16 @@
 		].sort();
 		return dates[dates.length - 1];
 	});
+
+	const clashes = $derived.by(() =>
+		planProblems({
+			updated: data.plan.updated,
+			timezone: data.plan.timezone,
+			languages,
+			assignments,
+			blocks
+		})
+	);
 
 	const seasons = $derived.by(() => {
 		const marks = marksBetween(
@@ -192,23 +203,39 @@
 	}
 
 	/** The next language that holds nothing today gets a row. */
+	/** True when another language already holds this slot over any of these days. */
+	function slotBusy(index: number, slot: string) {
+		const row = assignments[index];
+		return assignments.some(
+			(other, at) =>
+				at !== index && other.slot === slot && other.from <= row.to && row.from <= other.to
+		);
+	}
+
 	function addAssignment() {
 		const busy = new Set(
 			assignments.filter((item) => item.to >= today && item.from <= today).map((item) => item.language)
 		);
 		const free = languages.find((language) => !busy.has(language.id)) ?? languages[0];
 		if (!free) return;
-		const taken = new Set(
-			assignments.filter((item) => item.to >= today && item.from <= today).map((item) => item.slot)
-		);
-		const slot = SLOTS.find((candidate) => !taken.has(candidate)) ?? 'tertiary';
+		const from = today;
+		const to = addDays(today, 364);
+		// One primary and one secondary at a time, so a new row takes the first
+		// slot nobody else holds across the days it covers.
+		const slot =
+			SLOTS.find(
+				(candidate) =>
+					!assignments.some(
+						(item) => item.slot === candidate && item.from <= to && from <= item.to
+					)
+			) ?? 'tertiary';
 		assignments = [
 			...assignments,
 			{
 				language: free.id,
 				slot,
-				from: today,
-				to: addDays(today, 364),
+				from,
+				to,
 				dose: slot === 'tertiary' ? '2 x 20 min' : '3 x 30 min',
 				target: ''
 			}
@@ -308,10 +335,6 @@
 	<header class="now">
 		<div>
 			<h1>the plan</h1>
-			<p class="line">
-				Languages hold slots; everything else is a season you name and date. Click the ring
-				to set a date.
-			</p>
 		</div>
 		<div class="actions">
 			<button type="button" onclick={save} disabled={saving}>{saving ? 'saving' : 'save'}</button>
@@ -320,7 +343,11 @@
 	</header>
 
 	{#if message}<p class="ok">{message}</p>{/if}
-	{#if problems.length}
+	{#if clashes.length}
+		<ul class="problems">
+			{#each clashes as problem (problem)}<li>{problem}</li>{/each}
+		</ul>
+	{:else if problems.length}
 		<ul class="problems">
 			{#each problems as problem (problem)}<li>{problem}</li>{/each}
 		</ul>
@@ -463,7 +490,11 @@
 						</td>
 						<td>
 							<select value={item.slot} onchange={(e) => (item.slot = e.currentTarget.value as Assignment['slot'])}>
-								{#each SLOTS as slot (slot)}<option value={slot}>{slot}</option>{/each}
+								{#each SLOTS as slot (slot)}
+									<option value={slot} disabled={slotBusy(index, slot) && item.slot !== slot}>
+										{slot}{slotBusy(index, slot) && item.slot !== slot ? ' (taken)' : ''}
+									</option>
+								{/each}
 							</select>
 						</td>
 						<td>
@@ -549,11 +580,6 @@
 		padding-bottom: 1rem;
 	}
 
-	.line {
-		color: rgb(255 255 255 / 0.7);
-		margin: 0;
-		max-width: 46rem;
-	}
 
 	.unlock {
 		display: flex;
