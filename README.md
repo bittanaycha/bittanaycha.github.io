@@ -190,17 +190,31 @@ en dash and must not be used there.
 
 ### Deploying
 
-`/seasons` needs the database on every request, so the site runs as a Worker
-rather than a static bundle: `@sveltejs/adapter-cloudflare` builds it and
-`wrangler.jsonc` binds `ASSETS` and `DB`.
+`/seasons` reads D1 on every request, so the site runs as a Worker with the
+prerendered build as static assets: `@sveltejs/adapter-cloudflare` builds it and
+`wrangler.jsonc` binds `ASSETS` and `DB`. Cloudflare calls this Workers with
+static assets; the old Pages product cannot bind D1 to a static build the same
+way, so the Worker is the target.
 
 ```bash
-npx wrangler d1 create seasons          # prints the database_id for wrangler.jsonc
-npx wrangler d1 migrations apply seasons --remote
-npx wrangler secret put PLAN_PASSPHRASE
-npx wrangler secret put PLAN_SECRET
-npm run build && npx wrangler deploy
+npx wrangler login          # once, in a terminal
+scripts/deploy.sh           # creates D1, migrates, sets secrets, builds, deploys
 ```
 
-The other routes (`/`, `/dither`, `/running`) are still prerendered; only
-`/seasons` and the `/api` routes run per request.
+The script generates `PLAN_PASSPHRASE` and `PLAN_SECRET` if you do not pass them,
+prints the worker URL and writes nothing to disk beyond `wrangler.jsonc`'s
+`database_id`. Then put `PLAN_URL` and `PLAN_PASSPHRASE` in `.env` and run
+`npm run push` once to send the vault's plan up.
+
+Two things to do by hand the first time:
+
+- the custom domain, under Workers & Pages → the worker → Settings → Domains;
+- retire the GitHub Pages workflow (`.github/workflows/deploy.yml`), because a
+  push would otherwise publish a static build where `/seasons` and `/api` do not
+  exist. Do it after the Worker answers, or `bittanaycha.github.io/seasons` 404s
+  in the meantime and the nav link on the live site goes nowhere.
+
+Local runs need the binding too: `npm run dev` emulates D1 from `wrangler.jsonc`
+and reads `.dev.vars`, which is `.dev.vars.example` copied and filled in.
+Migrations against the local database run with
+`npx wrangler d1 migrations apply seasons --local`.
