@@ -100,8 +100,23 @@
 
 	const live = (block: Block) => block.from <= today && today <= block.to;
 
-	/** The band under the cursor, or nothing. Drives the readout under the ring. */
-	let hover = $state<Block | null>(null);
+	/** Whatever the pointer is over, and where it is, so the label can follow it. */
+	type Tip = { head: string; body: string; tone: string };
+	let tip = $state<Tip | null>(null);
+	let at = $state({ x: 0, y: 0 });
+
+	function follow(event: MouseEvent) {
+		at = { x: event.clientX, y: event.clientY };
+	}
+
+	function show(event: MouseEvent, next: Tip) {
+		follow(event);
+		tip = next;
+	}
+
+	function hide() {
+		tip = null;
+	}
 
 	const weeks = (block: Block) => Math.round((day(block.to) - day(block.from) + DAY) / (7 * DAY));
 
@@ -140,16 +155,27 @@
 	<svg
 		class="ring"
 		class:pickable={Boolean(onpick)}
-		viewBox="-46 -46 512 512"
+		viewBox="-52 -52 524 524"
 		aria-hidden="true"
-		onmouseleave={() => (hover = null)}
+		onmouseleave={hide}
 	>
 	<circle cx={C} cy={C} r={RIM} class="rim" />
 
 	{#each seasons as season (season.name + season.from)}
-		<path d={arc(BAND + 10, angle(season.from), angle(season.to))} stroke={tone(season.name)} class="season">
-			<title>{season.name}: {shortDate(season.from)} to {shortDate(season.to)}</title>
-		</path>
+		<path
+			d={arc(BAND + 10, angle(season.from), angle(season.to))}
+			stroke={tone(season.name)}
+			class="season"
+			onmouseenter={(event) =>
+				show(event, {
+					head: season.name,
+					body: `${shortDate(season.from)} to ${shortDate(season.to)}`,
+					tone: tone(season.name)
+				})}
+			onmousemove={follow}
+			onmouseleave={hide}
+			role="presentation"
+		/>
 	{/each}
 
 	{#each sekki as mark (mark.id)}
@@ -172,14 +198,21 @@
 		/>
 	{/each}
 
-	{#each ko as mark (mark.id)}
+	{#each ko as mark, turn (mark.id)}
 		{@const degrees = angle(mark.date)}
-		<g class="ko-label">
+		{@const outset = RIM + 9 + (turn % 2) * 11}
+		<g
+			class="ko-label"
+			role="presentation"
+			onmouseenter={(event) =>
+				show(event, { head: mark.name, body: mark.detail, tone: 'var(--ink)' })}
+			onmousemove={follow}
+			onmouseleave={hide}
+		>
 			{#each [...mark.name] as glyph, index (index)}
-				{@const [x, y] = polar(RIM + 9 + index * 7.4, degrees)}
+				{@const [x, y] = polar(outset + index * 7.4, degrees)}
 				<text x={x} y={y} class="ko-glyph" text-anchor="middle" dominant-baseline="middle">{glyph}</text>
 			{/each}
-			<title>{mark.name} - {mark.detail}</title>
 		</g>
 	{/each}
 
@@ -202,11 +235,16 @@
 				class="block"
 				class:live={live(block)}
 				class:dim={!live(block)}
-				onmouseenter={() => (hover = block)}
+				onmouseenter={(event) =>
+					show(event, {
+						head: `${block.kind} - ${block.title}`,
+						body: `${shortDate(block.from)} to ${shortDate(block.to)} - ${weeks(block)} weeks`,
+						tone: kindTone[block.kind] ?? 'var(--ink)'
+					})}
+				onmousemove={follow}
+				onmouseleave={hide}
 				role="presentation"
-			>
-				<title>{block.kind} - {block.title} - {shortDate(block.from)} to {shortDate(block.to)}, {weeks(block)} weeks</title>
-			</path>
+			/>
 		{/if}
 	{/each}
 
@@ -221,16 +259,17 @@
 	<circle cx={C} cy={C} r="44" class="hub" />
 	</svg>
 
-	<p class="readout" aria-live="polite">
-		{#if hover}
-			<span class="readout-kind">{hover.kind}</span>
-			<span class="readout-title">{hover.title}</span>
-			<span class="readout-dates">{shortDate(hover.from)} to {shortDate(hover.to)}</span>
-			<span class="readout-weeks">{weeks(hover)} weeks</span>
-		{:else}
-			<span class="readout-hint">hover a band to read it</span>
-		{/if}
-	</p>
+	{#if tip}
+		<div
+			class="tip"
+			style:left={`${Math.min(at.x + 16, window.innerWidth - 236)}px`}
+			style:top={`${Math.min(at.y + 18, window.innerHeight - 72)}px`}
+			style:--tip-tone={tip.tone}
+		>
+			<span class="tip-head">{tip.head}</span>
+			<span class="tip-body">{tip.body}</span>
+		</div>
+	{/if}
 </svelte:element>
 
 <style>
@@ -287,13 +326,14 @@
 
 	.ko-glyph {
 		fill: var(--ink);
-		fill-opacity: 0.34;
-		font-size: 7px;
-		font-family: 'Hiragino Mincho ProN', 'Songti SC', serif;
+		fill-opacity: 0.72;
+		font-size: 8px;
+		font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
 	}
 
 	.ko-label:hover .ko-glyph {
 		fill-opacity: 1;
+		font-weight: 600;
 	}
 
 	/* Seventy-two names need the room that a phone does not have. */
@@ -338,29 +378,29 @@
 		stroke: var(--rule);
 	}
 
-	.readout {
+	.tip {
+		position: fixed;
+		z-index: 20;
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.1rem 0.7rem;
-		align-items: baseline;
-		margin: 0.6rem 0 0;
-		min-height: 1.4rem;
-		font-size: 0.68rem;
-		letter-spacing: 0.06em;
-		text-transform: lowercase;
-		color: var(--faint);
-	}
-
-	.readout-kind {
-		color: var(--dim);
-	}
-
-	.readout-title {
+		flex-direction: column;
+		gap: 0.15rem;
+		max-width: 15rem;
+		padding: 0.45rem 0.6rem;
+		border: 1px solid rgb(255 255 255 / 0.28);
+		border-left: 3px solid var(--tip-tone, var(--ink));
+		background: #000;
 		color: var(--ink);
-		text-transform: none;
+		font-size: 0.68rem;
+		line-height: 1.35;
+		letter-spacing: 0.04em;
+		pointer-events: none;
 	}
 
-	.readout-hint {
-		color: var(--faint);
+	.tip-head {
+		text-transform: lowercase;
+	}
+
+	.tip-body {
+		color: var(--dim, rgb(255 255 255 / 0.62));
 	}
 </style>
