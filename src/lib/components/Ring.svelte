@@ -141,6 +141,25 @@
 			.toLowerCase();
 	}
 
+	/** The first of every month the window covers, so the band can carry names. */
+	const months = $derived.by(() => {
+		const out: string[] = [];
+		const first = new Date(start);
+		let year = first.getUTCFullYear();
+		let month = first.getUTCMonth();
+		for (;;) {
+			const date = Date.UTC(year, month, 1);
+			if (date > end) break;
+			if (date > start) out.push(new Date(date).toISOString().slice(0, 10));
+			month += 1;
+			if (month > 11) {
+				month = 0;
+				year += 1;
+			}
+		}
+		return out;
+	});
+
 	const ko = $derived(marks.filter((mark) => mark.system === 'ko'));
 	const sekki = $derived(marks.filter((mark) => mark.system === 'sekki'));
 
@@ -226,19 +245,30 @@
 		>
 			{#each [...mark.name] as glyph, index (index)}
 				{@const [x, y] = polar(outset + index * GLYPH, degrees)}
-				<text x={x} y={y} class="ko-glyph" text-anchor="middle" dominant-baseline="middle">{glyph}</text>
+				<text
+					x={x}
+					y={y}
+					class="ko-glyph"
+					text-anchor="middle"
+					dominant-baseline="middle"
+					transform="rotate({degrees + 90} {x} {y})">{glyph}</text>
 			{/each}
 		</g>
 	{/each}
 
-	{#each Array.from({ length: 12 }, (_, index) => index) as index (index)}
-		{@const date = new Date(new Date(start).getUTCFullYear(), index, 1).toISOString().slice(0, 10)}
-		{#if day(date) > start && day(date) < end}
-			{@const [x, y] = polar(MONTH + 2, angle(date))}
-			<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
-				{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}
-			</text>
-		{/if}
+	{#each months as date (date)}
+		{@const degrees = angle(date)}
+		{@const [x, y] = polar(MONTH - 6, degrees)}
+		<line
+			x1={polar(BAND + 11, degrees)[0]}
+			y1={polar(BAND + 11, degrees)[1]}
+			x2={polar(BAND - 11, degrees)[0]}
+			y2={polar(BAND - 11, degrees)[1]}
+			class="month-tick"
+		/>
+		<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
+			{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}
+		</text>
 	{/each}
 
 	{#each blocks as block (block.id)}
@@ -291,6 +321,8 @@
 	.shell {
 		display: block;
 		width: 100%;
+		max-width: min(100%, calc(100dvh - 7rem));
+		margin-inline: auto;
 		padding: 0;
 		border: 0;
 		background: none;
@@ -335,15 +367,22 @@
 
 	.month {
 		fill: var(--dim);
-		font-size: 13px;
-		letter-spacing: 0.08em;
+		font-size: 9.5px;
+		letter-spacing: 0.04em;
+		font-family: 'DotGothic16', ui-monospace, monospace;
+	}
+
+	.month-tick {
+		stroke: var(--ink);
+		stroke-width: 1;
+		opacity: 0.22;
 	}
 
 	.ko-glyph {
 		fill: var(--ink);
 		fill-opacity: 0.8;
-		font-size: 12.5px;
-		font-family: 'Hiragino Mincho ProN', 'YuMincho', 'Yu Mincho', 'Songti SC', 'Noto Serif JP', serif;
+		font-size: 13px;
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
 		letter-spacing: 0;
 	}
 
