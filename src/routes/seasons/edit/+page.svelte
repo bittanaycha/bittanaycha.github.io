@@ -49,7 +49,10 @@
 			...blocks.map((block) => block.to),
 			...assignments.map((item) => item.to)
 		].sort();
-		return dates[dates.length - 1];
+		// One turn of the year at most; anything later is drawn at the edge.
+		const last = dates[dates.length - 1];
+		const cap = addDays(windowFrom, 364);
+		return last > cap ? cap : last;
 	});
 
 	const clashes = $derived.by(() =>
@@ -361,6 +364,7 @@
 				{seasons}
 				blocks={ringBlocks}
 				marks={ringMarks}
+				labels={false}
 				{today}
 				onpick={setDate}
 			/>

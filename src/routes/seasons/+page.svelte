@@ -138,16 +138,6 @@
 	</section>
 
 	<section class="strip">
-		<div class="axis">
-			{#each data.ready ? data.seasons : [] as entry (entry.from)}
-				{#if at(entry.to) > at(first) && at(entry.from) < at(last)}
-					<div class="axis-mark" style={place(entry.from, entry.to)}>
-						<span>{entry.name.toLowerCase()}</span>
-					</div>
-				{/if}
-			{/each}
-		</div>
-
 		{#each lanes as lane (lane.id)}
 			<div class="lane" class:empty={lane.length === 0}>
 				<p class="lane-name">{lane.name}</p>
@@ -307,30 +297,8 @@
 		gap: 0.5rem;
 	}
 
-	.axis {
-		position: relative;
-		height: 1.5rem;
-		border-bottom: 1px solid var(--rule);
-		margin-left: 7.5rem;
-	}
 
-	.axis-mark {
-		position: absolute;
-		bottom: 0;
-		height: 100%;
-		border-left: 1px solid var(--rule);
-	}
 
-	.axis-mark span {
-		position: absolute;
-		bottom: 0.35rem;
-		left: 0.35rem;
-		font-size: 0.66rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--faint);
-		white-space: nowrap;
-	}
 
 	.lane {
 		display: grid;
@@ -458,10 +426,6 @@
 	}
 
 	@media (max-width: 60rem) {
-		.axis {
-			margin-left: 0;
-			margin-top: 1rem;
-		}
 
 		.ring-wrap {
 			flex-basis: 100%;

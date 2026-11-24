@@ -21,6 +21,7 @@
 		blocks,
 		today,
 		marks = [],
+		labels = true,
 		onpick
 	}: {
 		from: string;
@@ -29,6 +30,8 @@
 		blocks: Block[];
 		today: string;
 		marks?: Mark[];
+		/** The kō names around the rim. Off where the ring is a date picker. */
+		labels?: boolean;
 		onpick?: (date: string) => void;
 	} = $props();
 
@@ -150,6 +153,9 @@
 	}
 
 	/** The first of every month the window covers, so the band can carry names. */
+	// total is milliseconds; a turn of the year is 365 or 366 days.
+	const long = $derived(total / DAY > 400);
+
 	const months = $derived.by(() => {
 		const out: string[] = [];
 		const first = new Date(start);
@@ -169,6 +175,18 @@
 	});
 
 	const ko = $derived(marks.filter((mark) => mark.system === 'ko'));
+
+	// Year-and-a-bit windows pack in more than one kō per degree of arc, so a
+	// label is only drawn when it has room: the rest keep their tick.
+	const koLabels = $derived(
+		[...ko]
+			.sort((a, b) => angle(a.date) - angle(b.date))
+			.reduce<typeof ko>((kept, mark) => {
+				const last = kept[kept.length - 1];
+				if (last && angle(mark.date) - angle(last.date) < (long ? 6.5 : 4.2)) return kept;
+				return [...kept, mark];
+			}, [])
+	);
 	const sekki = $derived(marks.filter((mark) => mark.system === 'sekki'));
 
 	let shell: HTMLElement | undefined = $state();
@@ -240,7 +258,7 @@
 		/>
 	{/each}
 
-	{#each ko as mark (mark.id)}
+	{#each labels ? koLabels : [] as mark (mark.id)}
 		{@const degrees = angle(mark.date)}
 		{@const outset = RIM + 22}
 		{@const glyphs = [...mark.name]}
@@ -276,7 +294,9 @@
 			class="month-tick"
 		/>
 		<text x={x} y={y} class="month" text-anchor="middle" dominant-baseline="middle">
-			{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}
+			{new Date(date).toLocaleString('en', { month: 'short' }).toLowerCase()}{long
+				? ` ${date.slice(2, 4)}`
+				: ''}
 		</text>
 	{/each}
 

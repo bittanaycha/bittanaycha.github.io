@@ -34,13 +34,9 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	// sits at the wheel's leftmost point and today is inside the turn.
 	const turn = yearWindow(today);
 	const opening = { date: turn.from };
-	// A season that runs past the next solstice is stretched into the window
-	// rather than cut off at its edge.
-	const lastInPlan = [...plan.blocks.map((block) => block.to), ...plan.assignments.map((item) => item.to)]
-		.sort()
-		.at(-1);
-	const closing =
-		lastInPlan && lastInPlan > turn.to ? { date: lastInPlan } : { date: turn.to };
+	// One turn of the year, never more: a season that runs past the next solstice
+	// is cut at the edge of the wheel and read from the strip.
+	const closing = { date: turn.to };
 
 	const marks = [
 		...marksFor(year - 1),
