@@ -190,7 +190,7 @@ en dash and must not be used there.
 
 ### Deploying
 
-Live at <https://seasons.tombinnie.workers.dev>; the database is `seasons` in
+Live at <https://bittanaycha.bittanaycha.workers.dev>; the database is `seasons` in
 D1, id `bc4254b5-6fdd-4606-8873-ec917a803c35`.
 
 `/seasons` reads D1 on every request, so the site runs as a Worker with the
