@@ -180,7 +180,7 @@ export function marksFor(year: number): Mark[] {
 			id: `sekki-${term.romaji}-${localDate(at).slice(0, 4)}`,
 			system: 'sekki',
 			name: term.name,
-			detail: `${term.romaji} - ${term.en}`,
+			detail: `${term.kana} - ${term.en}`,
 			date: localDate(at),
 			at,
 			longitude: term.longitude
@@ -194,7 +194,7 @@ export function marksFor(year: number): Mark[] {
 			id: `ko-${ko.n}-${localDate(at).slice(0, 4)}`,
 			system: 'ko',
 			name: ko.name,
-			detail: `${ko.romaji} - ${ko.en}`,
+			detail: `${ko.kana} - ${ko.en}`,
 			date: localDate(at),
 			at,
 			longitude: ko.longitude

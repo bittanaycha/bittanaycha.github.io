@@ -5,6 +5,7 @@
 	import {
 		SLOTS,
 		addDays,
+		days as countDays,
 		weeks as countWeeks,
 		type Assignment,
 		type Block,
@@ -134,16 +135,22 @@
 		return found.sort((a, b) => a.gap - b.gap)[0]?.date ?? date;
 	}
 
-	/** today, a month, three months or six: set the end, then land on a checkpoint. */
+	/**
+	 * today, a month, three months or six: set whichever date is held, counted
+	 * from today. Today is exact; the others land on a checkpoint.
+	 */
 	function quick(days: number) {
 		if (selected.kind !== 'block') return;
 		const block = blocks[selected.index];
 		if (!block) return;
-		const target = days === 0 ? today : addDays(block.from, days);
-		block.to = snap(target);
-		if (block.to < block.from) block.to = block.from;
+		const span = countDays(block.from, block.to);
+		block[selected.end] = days === 0 ? today : snap(addDays(today, days));
+		if (block.from > block.to) {
+			// the block keeps its length when either end moves past the other
+			if (selected.end === 'from') block.to = addDays(block.from, span);
+			else block.from = addDays(block.to, -span);
+		}
 		blocks = [...blocks];
-		selected = { ...selected, end: 'to' };
 		message = '';
 	}
 

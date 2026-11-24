@@ -133,7 +133,7 @@
 			{#if data.ready && data.ko}
 				<p class="tag">this kō</p>
 				<p class="ko">{data.ko.name}</p>
-				<p class="dim">{data.ko.detail}</p>
+				<p class="kana">{data.ko.detail}</p>
 			{/if}
 		</div>
 	</section>

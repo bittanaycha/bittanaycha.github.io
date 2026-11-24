@@ -237,6 +237,7 @@
 	{#each ko as mark (mark.id)}
 		{@const degrees = angle(mark.date)}
 		{@const outset = RIM + 22}
+		{@const glyphs = [...mark.name]}
 		<g
 			class="ko-label"
 			role="presentation"
@@ -245,8 +246,8 @@
 			onmousemove={follow}
 			onmouseleave={hide}
 		>
-			{#each [...mark.name] as glyph, index (index)}
-				{@const [x, y] = polar(outset + index * GLYPH, degrees)}
+			{#each glyphs as glyph, index (index)}
+				{@const [x, y] = polar(outset + (glyphs.length - 1 - index) * GLYPH, degrees)}
 				<text
 					x={x}
 					y={y}
