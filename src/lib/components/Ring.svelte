@@ -41,7 +41,8 @@
 	const BAND = 263;
 	const TICK = 254;
 	const MONTH = 239;
-	const RINGS: Record<string, number> = { running: 211, music: 190, study: 168, language: 147, 'language-2': 125 };
+	const OUTER = 211;
+	const STEP = 22;
 	const WIDTH = 14;
 	const GLYPH = 13.5;
 
@@ -92,13 +93,14 @@
 		winter: 'var(--winter)'
 	};
 
-	const kindTone: Record<string, string> = {
-		running: 'var(--ink)',
-		music: '#d98b5f',
-		study: '#a78bd4',
-		language: '#7fa6dc',
-		'language-2': '#4f6d92'
-	};
+	/** Two language rails sit inside the season rails, so they get their own two. */
+	const PALETTE = ['var(--ink)', '#d98b5f', '#a78bd4', '#7fa6dc', '#4f6d92', '#c9b458'];
+
+	const radiusOf = (index: number) => Math.max(96, OUTER - index * STEP);
+	const toneOf = (index: number) => PALETTE[index % PALETTE.length];
+
+	const RAIL: Record<string, number> = { language: 147, 'language-2': 125 };
+	const RAIL_TONE: Record<string, string> = { language: '#7fa6dc', 'language-2': '#4f6d92' };
 
 	const tone = (name: string) => seasonTone[name.split(' ')[0]] ?? 'var(--ink)';
 
@@ -135,10 +137,10 @@
 		return `${days} days left`;
 	}
 
-	function shortDate(iso: string) {
-		return new Date(`${iso}T12:00:00Z`)
-			.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' })
-			.toLowerCase();
+	/** Day first, everywhere: 11/04/2027. */
+	function numDate(iso: string) {
+		const [year, month, date] = iso.split('-');
+		return `${date}/${month}/${year}`;
 	}
 
 	/** The first of every month the window covers, so the band can carry names. */
@@ -203,7 +205,7 @@
 			onmouseenter={(event) =>
 				show(event, {
 					head: season.name,
-					body: `${shortDate(season.from)} to ${shortDate(season.to)}`,
+					body: `${numDate(season.from)} to ${numDate(season.to)}`,
 					tone: tone(season.name)
 				})}
 			onmousemove={follow}
@@ -271,20 +273,22 @@
 		</text>
 	{/each}
 
-	{#each blocks as block (block.id)}
+	{#each blocks as block, index (block.id)}
 		{@const span = clipped(block)}
+		{@const radius = RAIL[block.kind] ?? radiusOf(index)}
+		{@const tone = RAIL_TONE[block.kind] ?? toneOf(index)}
 		{#if span}
 			<path
-				d={arc(RINGS[block.kind] ?? 96, span.a, span.b)}
-				stroke={kindTone[block.kind] ?? 'var(--ink)'}
+				d={arc(radius, span.a, span.b)}
+				stroke={tone}
 				class="block"
 				class:live={live(block)}
 				class:dim={!live(block)}
 				onmouseenter={(event) =>
 					show(event, {
 						head: `${block.kind} - ${block.title}`,
-						body: `${shortDate(block.from)} to ${shortDate(block.to)} - ${weeks(block)} weeks - ${standing(block)}`,
-						tone: kindTone[block.kind] ?? 'var(--ink)'
+						body: `${numDate(block.from)} to ${numDate(block.to)} - ${weeks(block)} weeks - ${standing(block)}`,
+						tone
 					})}
 				onmousemove={follow}
 				onmouseleave={hide}

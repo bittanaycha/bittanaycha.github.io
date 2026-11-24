@@ -9,8 +9,13 @@
  * slot. Running, music and study are seasons you name, date and give a length.
  */
 
-export const KINDS = ['running', 'music', 'study'] as const;
-export type Kind = (typeof KINDS)[number];
+/**
+ * A block is a name and two dates. `kind` survives on the record so old rows
+ * keep their value, but nothing asks for it any more and the ring colours by
+ * the order the blocks start in.
+ */
+export const KINDS = ['running', 'music', 'study', 'season'] as const;
+export type Kind = string;
 
 export const SLOTS = ['primary', 'secondary', 'tertiary'] as const;
 export type Slot = (typeof SLOTS)[number];
@@ -113,7 +118,7 @@ export function problems(plan: Plan): string[] {
 		if (blockIds.has(block.id)) found.push(`block ${block.id} appears twice`);
 		blockIds.add(block.id);
 
-		if (!KINDS.includes(block.kind)) found.push(`${block.id}: unknown kind ${block.kind}`);
+		if (!block.kind) found.push(`${block.id}: a block needs a kind`);
 		if (!block.title.trim()) found.push(`${block.id}: no title`);
 		if (!validDate(block.from) || !validDate(block.to)) {
 			found.push(`${block.id}: ${block.from} to ${block.to} is not a date range`);

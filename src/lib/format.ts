@@ -29,6 +29,12 @@ export function dotted(iso: string): string {
 	return `${date}.${month}.${year}`;
 }
 
+/** `2027-04-11` → `11/04/2027`, day first everywhere it is written. */
+export function numDate(iso: string): string {
+	const [year, month, date] = iso.split('-');
+	return `${date}/${month}/${year}`;
+}
+
 /** Calendar date of a `Date`, as `YYYY-MM-DD` in local time. */
 export function isoDay(date: Date): string {
 	const month = `${date.getMonth() + 1}`.padStart(2, '0');

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Ring from '#lib/components/Ring.svelte';
-	import { marksBetween, localDate } from '#lib/calendar';
+	import { marksBetween } from '#lib/calendar';
+	import { numDate } from '#lib/format';
 	import {
-		KINDS,
 		SLOTS,
 		addDays,
 		weeks as countWeeks,
@@ -34,17 +34,13 @@
 	let message = $state('');
 	let saving = $state(false);
 
-	const DEFAULT_DOSE: Record<string, string> = {
-		running: 'as the plan says',
-		music: '20 min a day',
-		study: 'one chapter a week'
-	};
-
 	const systems = ['all', 'astronomical', 'meteorological', 'celtic', 'sekki', 'ko'] as const;
 	let system = $state<(typeof systems)[number]>('all');
 
-	const windowFrom = $derived(blocks.map((b) => b.from).sort()[0] ?? today);
-	const windowTo = $derived(blocks.map((b) => b.to).sort().at(-1) ?? addDays(today, 365));
+	// svelte-ignore state_referenced_locally
+	const windowFrom = data.window.from;
+	// svelte-ignore state_referenced_locally
+	const windowTo = data.window.to;
 
 	const seasons = $derived.by(() => {
 		const marks = marksBetween(
@@ -88,14 +84,25 @@
 
 	const nearby = $derived.by(() => {
 		const middle = new Date(`${focus}T12:00:00Z`).getTime();
-		const found = marksBetween(middle - 70 * 86_400_000, middle + 70 * 86_400_000, undefined);
-		return found
+		const found = marksBetween(middle - 70 * 86_400_000, middle + 70 * 86_400_000, undefined)
 			.filter((mark) => system === 'all' || mark.system === system)
-			.map((mark) => ({ ...mark, gap: Math.abs(new Date(`${mark.date}T12:00:00Z`).getTime() - middle) }))
+			.map((mark) => ({ ...mark, gap: Math.abs(new Date(`${mark.date}T12:00:00Z`).getTime() - middle) }));
+		const coarse = found.filter((mark) => mark.system !== 'ko');
+		const ko = found
+			.filter((mark) => mark.system === 'ko')
 			.sort((a, b) => a.gap - b.gap)
-			.slice(0, 10)
-			.sort((a, b) => (a.date < b.date ? -1 : 1));
+			.slice(0, 4);
+		return [...coarse, ...ko].sort((a, b) => (a.date < b.date ? -1 : 1));
 	});
+
+	/** The editor's wheel carries the same marks as the public one. */
+	const ringMarks = $derived(
+		marksBetween(
+			new Date(`${windowFrom}T12:00:00Z`).getTime(),
+			new Date(`${windowTo}T12:00:00Z`).getTime(),
+			undefined
+		)
+	);
 
 	function setDate(date: string) {
 		if (selected.kind === 'block') {
@@ -113,25 +120,48 @@
 		message = '';
 	}
 
+	/** The mark of any system closest to a date, so a quick length lands on one. */
+	function snap(date: string) {
+		const middle = new Date(`${date}T12:00:00Z`).getTime();
+		const found = marksBetween(
+			middle - 40 * 86_400_000,
+			middle + 40 * 86_400_000,
+			['astronomical', 'meteorological', 'celtic', 'sekki']
+		).map((mark) => ({
+			date: mark.date,
+			gap: Math.abs(new Date(`${mark.date}T12:00:00Z`).getTime() - middle)
+		}));
+		return found.sort((a, b) => a.gap - b.gap)[0]?.date ?? date;
+	}
+
+	/** today, a month, three months or six: set the end, then land on a checkpoint. */
+	function quick(days: number) {
+		if (selected.kind !== 'block') return;
+		const block = blocks[selected.index];
+		if (!block) return;
+		const target = days === 0 ? today : addDays(block.from, days);
+		block.to = snap(target);
+		if (block.to < block.from) block.to = block.from;
+		blocks = [...blocks];
+		selected = { ...selected, end: 'to' };
+		message = '';
+	}
+
 	function choose(kind: 'block' | 'assignment', index: number, end: 'from' | 'to') {
 		selected = { kind, index, end };
 	}
 
-	function addBlock(kind: (typeof KINDS)[number]) {
-		const last = blocks
-			.filter((block) => block.kind === kind)
-			.map((block) => block.to)
-			.sort()
-			.at(-1);
-		const from = last ? addDays(last, 1) : today;
+	function addBlock() {
+		const last = blocks.map((block) => block.to).sort().at(-1);
+		const from = last && last >= today ? addDays(last, 1) : today;
 		blocks = [
 			...blocks,
 			{
-				id: `${kind}-${Date.now().toString(36)}`,
-				kind,
-				title: `a ${kind} season`,
+				id: `season-${Date.now().toString(36)}`,
+				kind: 'season',
+				title: 'a season',
 				detail: '',
-				dose: DEFAULT_DOSE[kind],
+				dose: '',
 				target: '',
 				from,
 				to: addDays(from, 7 * 12 - 1)
@@ -240,7 +270,6 @@
 	{#if data.locked}
 		<header class="now">
 			<div>
-				<p class="tag">seasons / edit</p>
 				<h1>the plan</h1>
 				<p class="line">The passphrase opens the editor.</p>
 			</div>
@@ -264,7 +293,6 @@
 	{:else}
 	<header class="now">
 		<div>
-			<p class="tag">seasons / edit</p>
 			<h1>the plan</h1>
 			<p class="line">
 				Languages hold slots; everything else is a season you name and date. Click the ring
@@ -291,23 +319,32 @@
 				to={windowTo}
 				{seasons}
 				blocks={ringBlocks}
+				marks={ringMarks}
 				{today}
 				onpick={setDate}
 			/>
 		</div>
 
 		<div class="side">
-			<p class="tag">
-				picking {selected.end === 'from' ? 'the start' : 'the end'} of
+			<p class="picking">
+				{selected.end === 'from' ? 'start' : 'end'} of
 				{selected.kind === 'block'
 					? (blocks[selected.index]?.title ?? 'nothing')
 					: (languages.find((language) => language.id === assignments[selected.index]?.language)
 							?.name ?? 'nothing')}
+				<strong>{numDate(focus)}</strong>
 			</p>
 
 			<div class="field">
 				<label for="date">date</label>
 				<input id="date" type="date" value={focus} oninput={(e) => setDate(e.currentTarget.value)} />
+			</div>
+
+			<div class="quick">
+				<button type="button" onclick={() => quick(0)}>today</button>
+				<button type="button" onclick={() => quick(30)}>1 month</button>
+				<button type="button" onclick={() => quick(91)}>3 months</button>
+				<button type="button" onclick={() => quick(182)}>6 months</button>
 			</div>
 
 			<div class="field">
@@ -348,42 +385,31 @@
 	</section>
 
 	<section class="panel">
-		<p class="tag">blocks</p>
 		<table>
 			<thead>
 				<tr>
-					<th>kind</th>
 					<th>title</th>
 					<th>start</th>
 					<th>end</th>
 					<th>weeks</th>
-					<th>dose</th>
-					<th>target</th>
 					<th></th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each blocks as block, index (block.id)}
 					<tr class:chosen={selected.kind === 'block' && selected.index === index}>
-						<td>
-							<select value={block.kind} onchange={(e) => (block.kind = e.currentTarget.value as Block['kind'])}>
-								{#each KINDS as kind (kind)}<option value={kind}>{kind}</option>{/each}
-							</select>
-						</td>
 						<td><input value={block.title} oninput={(e) => (block.title = e.currentTarget.value)} /></td>
 						<td>
 							<button type="button" class="date" class:active={selected.kind === 'block' && selected.index === index && selected.end === 'from'} onclick={() => choose('block', index, 'from')}>
-								{block.from}
+								{numDate(block.from)}
 							</button>
 						</td>
 						<td>
 							<button type="button" class="date" class:active={selected.kind === 'block' && selected.index === index && selected.end === 'to'} onclick={() => choose('block', index, 'to')}>
-								{block.to}
+								{numDate(block.to)}
 							</button>
 						</td>
 						<td class="num">{lengthOf(block)}</td>
-						<td><input value={block.dose} oninput={(e) => (block.dose = e.currentTarget.value)} /></td>
-						<td><input value={block.target} oninput={(e) => (block.target = e.currentTarget.value)} /></td>
 						<td>
 							<button type="button" class="remove" onclick={() => removeBlock(index)}>remove</button>
 						</td>
@@ -393,14 +419,11 @@
 		</table>
 
 		<div class="add">
-			{#each KINDS as kind (kind)}
-				<button type="button" onclick={() => addBlock(kind)}>+ {kind}</button>
-			{/each}
+			<button type="button" onclick={addBlock}>+ season</button>
 		</div>
 	</section>
 
 	<section class="panel">
-		<p class="tag">language slots - one primary, one secondary, the rest tertiary</p>
 		<table>
 			<thead>
 				<tr>
@@ -408,8 +431,6 @@
 					<th>slot</th>
 					<th>from</th>
 					<th>to</th>
-					<th>dose</th>
-					<th>target</th>
 					<th></th>
 				</tr>
 			</thead>
@@ -433,16 +454,14 @@
 						</td>
 						<td>
 							<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'from'} onclick={() => choose('assignment', index, 'from')}>
-								{item.from}
+								{numDate(item.from)}
 							</button>
 						</td>
 						<td>
 							<button type="button" class="date" class:active={selected.kind === 'assignment' && selected.index === index && selected.end === 'to'} onclick={() => choose('assignment', index, 'to')}>
-								{item.to}
+								{numDate(item.to)}
 							</button>
 						</td>
-						<td><input value={item.dose} oninput={(e) => (item.dose = e.currentTarget.value)} /></td>
-						<td><input value={item.target} oninput={(e) => (item.target = e.currentTarget.value)} /></td>
 						<td><button type="button" class="remove" onclick={() => removeAssignment(index)}>remove</button></td>
 					</tr>
 				{/each}
@@ -454,7 +473,6 @@
 	</section>
 
 	<section class="panel">
-		<p class="tag">languages</p>
 		<table>
 			<thead>
 				<tr><th>name</th><th>level</th><th>state</th><th>aim</th><th>stage</th></tr>
@@ -485,8 +503,12 @@
 	}
 
 	main {
+		--ink: #fff;
+		--dim: rgb(255 255 255 / 0.62);
+		--faint: rgb(255 255 255 / 0.34);
+		--rule: rgb(255 255 255 / 0.22);
 		font-family: 'Nothing', ui-monospace, monospace;
-		color: #fff;
+		color: var(--ink);
 		padding: 2.2rem 0 6rem;
 		width: 100%;
 		max-width: 88rem;
@@ -503,12 +525,6 @@
 		margin: 0.2rem 0 0.6rem;
 	}
 
-	.tag {
-		margin: 0;
-		font-size: 0.66rem;
-		letter-spacing: 0.22em;
-		color: rgb(255 255 255 / 0.45);
-	}
 
 	.now {
 		display: flex;
@@ -579,6 +595,45 @@
 		align-items: center;
 		gap: 0.8rem;
 		margin: 0.5rem 0;
+	}
+
+	.picking {
+		margin: 0 0 1rem;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		color: var(--dim);
+	}
+
+	.picking strong {
+		display: block;
+		margin-top: 0.3rem;
+		color: var(--ink);
+		font-weight: 400;
+		font-size: 1.05rem;
+		letter-spacing: 0.06em;
+	}
+
+	.quick {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-bottom: 1rem;
+	}
+
+	.quick button {
+		padding: 0.35rem 0.6rem;
+		border: 1px solid rgb(255 255 255 / 0.24);
+		background: none;
+		color: var(--dim);
+		font: inherit;
+		font-size: 0.72rem;
+		letter-spacing: 0.08em;
+		cursor: pointer;
+	}
+
+	.quick button:hover {
+		color: var(--ink);
+		border-color: var(--ink);
 	}
 
 	.systems {

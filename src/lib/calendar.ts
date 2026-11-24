@@ -163,20 +163,6 @@ export function marksFor(year: number): Mark[] {
 		});
 	}
 
-	for (const quarter of QUARTERS) {
-		const at = marks.find((mark) => mark.system === 'astronomical' && mark.name === quarter.name)?.at;
-		if (!at) continue;
-		marks.push({
-			id: `celtic-${quarter.id}-${localDate(at).slice(0, 4)}`,
-			system: 'celtic',
-			name: quarter.name,
-			detail: 'celtic quarter day',
-			date: localDate(at),
-			at,
-			longitude: quarter.longitude
-		});
-	}
-
 	for (const fixed of METEOROLOGICAL) {
 		marks.push({
 			id: `${fixed.id}-${year}`,
@@ -231,6 +217,17 @@ export function marksBetween(from: number, to: number, systems?: System[]): Mark
 
 	const seen = new Set<string>();
 	return marks.filter((mark) => (seen.has(mark.id) ? false : (seen.add(mark.id), true)));
+}
+
+/**
+ * The year the ring shows: the next winter solstice through the one after it,
+ * so the wheel always starts at 9 o'clock and always covers a full turn.
+ */
+export function yearWindow(today: string) {
+	const at = new Date(`${today}T12:00:00Z`).getTime();
+	const opening = instantAt(270, at);
+	const closing = instantAt(270, opening + 10 * DAY);
+	return { opening: localDate(opening), from: localDate(opening), to: localDate(closing - DAY) };
 }
 
 /** The season a date falls in, given the astronomical quarters. */

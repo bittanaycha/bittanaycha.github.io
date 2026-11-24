@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Ring from '#lib/components/Ring.svelte';
-	import { isoDay, shortDate } from '#lib/format';
-	import { KINDS, SLOTS, type Assignment } from '#lib/plan-rules';
+	import { isoDay, numDate } from '#lib/format';
+	import { SLOTS, type Assignment } from '#lib/plan-rules';
 
 	let { data } = $props();
 
@@ -61,9 +61,16 @@
 
 	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
 
-	function lane(kind: string) {
-		return blocks.filter((block) => block.kind === kind);
-	}
+	/** One rail per block, so nothing depends on a block declaring a kind. */
+	const lanes = $derived.by(() => {
+		const ordered = [...blocks].sort((a, b) => (a.from < b.from ? -1 : 1));
+		return ordered.slice(0, 5).map((block) => ({
+			id: block.id,
+			name: block.title,
+			bars: [block],
+			length: 1
+		}));
+	});
 
 	/** Left edge and width of a date range on the strip, as percentages. */
 	function place(from: string, to: string) {
@@ -142,12 +149,11 @@
 			{/each}
 		</div>
 
-		{#each KINDS as kind (kind)}
-			{@const laneBlocks = lane(kind)}
-			<div class="lane" class:empty={laneBlocks.length === 0}>
-				<p class="lane-name">{kind}</p>
+		{#each lanes as lane (lane.id)}
+			<div class="lane" class:empty={lane.length === 0}>
+				<p class="lane-name">{lane.name}</p>
 				<div class="rail">
-					{#each laneBlocks as block (block.id)}
+					{#each lane.bars as block (block.id)}
 						<div
 							class="bar"
 							class:bar-live={live.some((item) => item.id === block.id)}
@@ -218,7 +224,7 @@
 			<li><a href={vaultLink('Seasons/Reviews.md')}>reviews</a></li>
 			<li><a href={vaultLink('Knowledge/Languages/Language Goals and Overview.md')}>goals</a></li>
 		</ul>
-		<p class="tag stamp">synced {shortDate(data.updated ?? today)}</p>
+		<p class="tag stamp">synced {numDate(data.updated ?? today)}</p>
 	</section>
 </main>
 
