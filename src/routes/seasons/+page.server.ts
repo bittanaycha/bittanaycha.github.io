@@ -30,12 +30,10 @@ export const load: PageServerLoad = async ({ platform, locals }) => {
 	const plan = await readPlan(db);
 	const year = Number(today.slice(0, 4));
 
-	// The ring opens at the winter solstice on or before today, so the solstice
-	// sits at the wheel's leftmost point and today is inside the turn.
+	// Half a year either side of today, so nothing that matters is left off the
+	// rim: the winter solstice is wherever it falls in that window.
 	const turn = yearWindow(today);
 	const opening = { date: turn.from };
-	// One turn of the year, never more: a season that runs past the next solstice
-	// is cut at the edge of the wheel and read from the strip.
 	const closing = { date: turn.to };
 
 	const marks = [

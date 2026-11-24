@@ -43,17 +43,9 @@
 	// svelte-ignore state_referenced_locally
 	const windowFrom = data.window.from;
 
-	const windowTo = $derived.by(() => {
-		const dates = [
-			data.window.to,
-			...blocks.map((block) => block.to),
-			...assignments.map((item) => item.to)
-		].sort();
-		// One turn of the year at most; anything later is drawn at the edge.
-		const last = dates[dates.length - 1];
-		const cap = addDays(windowFrom, 364);
-		return last > cap ? cap : last;
-	});
+	// The ring is the same rolling year as the reading page: half a year either
+	// side of today, no stretching to reach a date the ring cannot show.
+	const windowTo = $derived(data.window.to);
 
 	const clashes = $derived.by(() =>
 		planProblems({
@@ -208,6 +200,9 @@
 	/** The next language that holds nothing today gets a row. */
 	/** True when another language already holds this slot over any of these days. */
 	function slotBusy(index: number, slot: string) {
+		// Tertiary is not a place, it is the absence of one: any number of
+		// languages can be there at once.
+		if (slot === 'tertiary') return false;
 		const row = assignments[index];
 		return assignments.some(
 			(other, at) =>
@@ -228,6 +223,7 @@
 		const slot =
 			SLOTS.find(
 				(candidate) =>
+					candidate === 'tertiary' ||
 					!assignments.some(
 						(item) => item.slot === candidate && item.from <= to && from <= item.to
 					)
