@@ -57,8 +57,10 @@
 	 * winter solstice, and that point sits at the left of the circle: the year
 	 * turns from 9 o'clock through 12 to 3 and round to 6.
 	 */
+	/** Days outside the window sit on its edge rather than wrapping round it. */
 	function angle(date: string) {
-		return ((day(date) - start) / total) * 360 + 180;
+		const offset = Math.min(total, Math.max(0, day(date) - start));
+		return (offset / total) * 360 + 180;
 	}
 
 	const polar = (radius: number, degrees: number) => {
@@ -99,8 +101,12 @@
 	const radiusOf = (index: number) => Math.max(96, OUTER - index * STEP);
 	const toneOf = (index: number) => PALETTE[index % PALETTE.length];
 
-	const RAIL: Record<string, number> = { language: 147, 'language-2': 125 };
-	const RAIL_TONE: Record<string, string> = { language: '#7fa6dc', 'language-2': '#4f6d92' };
+	const RAIL: Record<string, number> = { language: 147, 'language-2': 125, 'language-3': 103 };
+	const RAIL_TONE: Record<string, string> = {
+		language: '#7fa6dc',
+		'language-2': '#4f6d92',
+		'language-3': '#33455c'
+	};
 
 	const tone = (name: string) => seasonTone[name.split(' ')[0]] ?? 'var(--ink)';
 

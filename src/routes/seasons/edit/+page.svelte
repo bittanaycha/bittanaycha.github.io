@@ -38,10 +38,18 @@
 	const systems = ['all', 'astronomical', 'meteorological', 'celtic', 'sekki', 'ko'] as const;
 	let system = $state<(typeof systems)[number]>('all');
 
+	/** The year opens at the winter solstice and stretches to hold the plan. */
 	// svelte-ignore state_referenced_locally
 	const windowFrom = data.window.from;
-	// svelte-ignore state_referenced_locally
-	const windowTo = data.window.to;
+
+	const windowTo = $derived.by(() => {
+		const dates = [
+			data.window.to,
+			...blocks.map((block) => block.to),
+			...assignments.map((item) => item.to)
+		].sort();
+		return dates[dates.length - 1];
+	});
 
 	const seasons = $derived.by(() => {
 		const marks = marksBetween(
@@ -136,21 +144,20 @@
 	}
 
 	/**
-	 * today, a month, three months or six: set whichever date is held, counted
-	 * from today. Today is exact; the others land on a checkpoint.
+	 * Start the block today, in a month, in three or in six. Today is exact; the
+	 * longer ones land on the nearest checkpoint. The length is kept, so the end
+	 * follows the start.
 	 */
 	function quick(days: number) {
 		if (selected.kind !== 'block') return;
 		const block = blocks[selected.index];
 		if (!block) return;
 		const span = countDays(block.from, block.to);
-		block[selected.end] = days === 0 ? today : snap(addDays(today, days));
-		if (block.from > block.to) {
-			// the block keeps its length when either end moves past the other
-			if (selected.end === 'from') block.to = addDays(block.from, span);
-			else block.from = addDays(block.to, -span);
-		}
+		const start = days === 0 ? today : snap(addDays(today, days));
+		block.from = start;
+		block.to = addDays(start, span);
 		blocks = [...blocks];
+		selected = { kind: 'block', index: selected.index, end: 'from' };
 		message = '';
 	}
 

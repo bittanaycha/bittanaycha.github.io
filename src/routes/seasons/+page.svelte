@@ -61,10 +61,10 @@
 
 	const live = $derived(blocks.filter((block) => block.from <= today && today <= block.to));
 
-	/** One rail per block, so nothing depends on a block declaring a kind. */
+	/** One rail per block, as many as there are blocks. */
 	const lanes = $derived.by(() => {
 		const ordered = [...blocks].sort((a, b) => (a.from < b.from ? -1 : 1));
-		return ordered.slice(0, 5).map((block) => ({
+		return ordered.map((block) => ({
 			id: block.id,
 			name: block.title,
 			bars: [block],
@@ -115,10 +115,9 @@
 				blocks={[
 					...blocks.map((block) => ({ id: block.id, kind: block.kind, title: block.title, from: block.from, to: block.to })),
 					...languageBars
-						.filter((bar) => bar.slot !== 'tertiary')
 						.map((bar) => ({
 							id: bar.id,
-							kind: bar.slot === 'secondary' ? 'language-2' : 'language',
+							kind: `language${bar.slot === 'primary' ? '' : bar.slot === 'secondary' ? '-2' : '-3'}`,
 							title: bar.name,
 							from: bar.from,
 							to: bar.to
@@ -167,10 +166,10 @@
 			</div>
 		{/each}
 
-		{#each ['primary', 'secondary'] as slot (slot)}
+		{#each ['primary', 'secondary', 'tertiary'] as slot, index (slot)}
 			{@const bars = languageBars.filter((bar) => bar.slot === slot)}
 			<div class="lane" class:empty={bars.length === 0}>
-				<p class="lane-name">language {slot === 'primary' ? '1' : '2'}</p>
+				<p class="lane-name">language {index + 1}</p>
 				<div class="rail">
 					{#each bars as bar (bar.id)}
 						<div
@@ -179,7 +178,7 @@
 							style={place(bar.from, bar.to)}
 						>
 							<span>{bar.name}</span>
-							<span class="bar-weeks">{bar.to.slice(5)}</span>
+							<span class="bar-weeks">{bar.to.slice(8)}/{bar.to.slice(5, 7)}</span>
 						</div>
 					{/each}
 				</div>

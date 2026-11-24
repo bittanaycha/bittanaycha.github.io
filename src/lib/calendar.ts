@@ -225,7 +225,13 @@ export function marksBetween(from: number, to: number, systems?: System[]): Mark
  */
 export function yearWindow(today: string) {
 	const at = new Date(`${today}T12:00:00Z`).getTime();
-	const opening = instantAt(270, at);
+	// the solstice on or before today, so the wheel always holds the present
+	let opening = instantAt(270, at - 400 * DAY);
+	for (let step = 0; step < 2; step += 1) {
+		const next = instantAt(270, opening + 10 * DAY);
+		if (localDate(next) > today) break;
+		opening = next;
+	}
 	const closing = instantAt(270, opening + 10 * DAY);
 	return { opening: localDate(opening), from: localDate(opening), to: localDate(closing - DAY) };
 }
