@@ -389,7 +389,7 @@
 					/>
 					{#if bar.icon && ((piece.to - piece.from) / total) * 2 * Math.PI * radius > badge * 2.6}
 						{@const [ix, iy] = polar(radius, degrees((piece.from + piece.to) / 2))}
-						<g class="lane-icon" aria-hidden="true">
+						<g class="lane-icon" class:glyph={lane.group === 'language'} aria-hidden="true">
 							<circle cx={ix} cy={iy} r={badge} />
 							<text x={ix} y={iy} text-anchor="middle" dominant-baseline="central">
 								{bar.icon}
@@ -563,6 +563,12 @@
 		font-size: calc(var(--lane-width) * 0.96);
 		font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 		filter: var(--icon-filter, none);
+	}
+
+	/* A language glyph is already ink. A flag keeps its own colours. */
+	.lane-icon.glyph text {
+		filter: none;
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
 	}
 
 	.hand {

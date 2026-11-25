@@ -77,13 +77,16 @@
 			bars: assignments
 				.filter((item) => item.slot === slot && inWindow(item.from, item.to))
 				.sort((a, b) => (a.from < b.from ? -1 : 1))
-				.map((item) => ({
-					id: `${item.language}-${item.from}`,
-					title: languages.find((language) => language.id === item.language)?.name ?? item.language,
-					icon: '',
-					from: item.from,
-					to: item.to,
-				}))
+				.map((item) => {
+					const language = languages.find((entry) => entry.id === item.language);
+					return {
+						id: `${item.language}-${item.from}`,
+						title: language?.name ?? item.language,
+						icon: language?.icon ?? '',
+						from: item.from,
+						to: item.to
+					};
+				})
 		}));
 
 		return [...seasons, ...slots];
@@ -164,7 +167,9 @@
 								style:--tone={lane.tone}
 							>
 								<span class="bar-title">
-									{#if bar.icon}<span class="bar-icon" aria-hidden="true">{bar.icon}</span>{/if}
+									{#if bar.icon}
+										<span class={lane.slot ? 'bar-glyph' : 'bar-icon'} aria-hidden="true">{bar.icon}</span>
+									{/if}
 									<span class="bar-name">{bar.title}</span>
 								</span>
 								<span class="bar-weeks">{lane.slot
@@ -195,7 +200,10 @@
 				{#each languages as language (language.id)}
 					{@const held = holding.get(language.id) ?? null}
 					<tr class:off={!held}>
-						<td class="cell-name">{language.name}</td>
+						<td class="cell-name">
+							{#if language.icon}<span class="lang-icon" aria-hidden="true">{language.icon}</span
+								>{/if}{language.name}
+						</td>
 						<td>{language.level}</td>
 						<td class="dim">{language.state || '-'}</td>
 						<td>{language.aim}</td>
@@ -427,6 +435,19 @@
 		filter: var(--icon-filter-live);
 	}
 
+	/*
+	 * A language icon is a glyph from the language itself, or a flag the editor
+	 * puts there. It is not a colour emoji, so it keeps its own colour: ink on
+	 * the paper, paper on the live bar.
+	 */
+	.bar-glyph {
+		flex: none;
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+		font-size: 0.95rem;
+		line-height: 1;
+		opacity: 0.92;
+	}
+
 	.panel {
 		border-top: 1px dotted var(--rule);
 		padding-top: 1rem;
@@ -469,14 +490,11 @@
 		white-space: nowrap;
 	}
 
-	.cell-name::before {
-		content: '';
+	.lang-icon {
 		display: inline-block;
-		width: 5px;
-		height: 5px;
-		margin-right: 0.55rem;
-		background: var(--summer);
-		vertical-align: 0.05em;
+		min-width: 1.1em;
+		margin-right: 0.45rem;
+		font-family: 'DotGothic16', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
 	}
 
 	:global(code) {

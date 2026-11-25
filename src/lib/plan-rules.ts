@@ -32,6 +32,7 @@ export type Block = {
 export type Language = {
 	id: string;
 	name: string;
+	icon: string;
 	level: string;
 	aim: string;
 	stage: string;

@@ -12,6 +12,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const languages = sqliteTable('languages', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
+	icon: text('icon').notNull().default(''),
 	level: text('level').notNull().default(''),
 	aim: text('aim').notNull().default(''),
 	stage: text('stage').notNull().default(''),

@@ -23,6 +23,7 @@ export async function readPlan(db: Binding): Promise<Plan> {
 		languages: languageRows.map((row): Language => ({
 			id: row.id,
 			name: row.name,
+			icon: row.icon,
 			level: row.level,
 			aim: row.aim,
 			stage: row.stage,
@@ -70,6 +71,7 @@ export async function writePlan(db: Binding, plan: Plan) {
 			d.insert(languages).values({
 				id: language.id,
 				name: language.name,
+				icon: language.icon ?? '',
 				level: language.level ?? '',
 				aim: language.aim ?? '',
 				stage: language.stage ?? '',

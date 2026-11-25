@@ -113,12 +113,16 @@
 			bars: assignments
 				.filter((item) => item.slot === slot && valid(item))
 				.sort((a, b) => (a.from < b.from ? -1 : 1))
-				.map((item) => ({
-					id: `${item.language}-${item.from}`,
-					title: languages.find((language) => language.id === item.language)?.name ?? item.language,
-					from: item.from,
-					to: item.to,
-				}))
+				.map((item) => {
+					const language = languages.find((entry) => entry.id === item.language);
+					return {
+						id: `${item.language}-${item.from}`,
+						title: language?.name ?? item.language,
+						icon: language?.icon ?? '',
+						from: item.from,
+						to: item.to
+					};
+				})
 		}));
 
 		return [...seasons, ...slots];
@@ -461,7 +465,7 @@
 							<input
 								class="icon-input"
 								value={block.icon}
-								maxlength="4"
+								maxlength="16"
 								aria-label="icon"
 								oninput={(e) => (block.icon = e.currentTarget.value)}
 							/>
@@ -554,13 +558,22 @@
 	</section>
 
 	<section class="panel">
-		<table>
+		<table class="languages">
 			<thead>
-				<tr><th>name</th><th>level</th><th>state</th><th>aim</th><th>stage</th></tr>
+				<tr><th>icon</th><th>name</th><th>level</th><th>state</th><th>aim</th><th>stage</th></tr>
 			</thead>
 			<tbody>
 				{#each languages as language (language.id)}
 					<tr>
+						<td class="icon-cell">
+							<input
+								class="icon-input"
+								value={language.icon}
+								maxlength="16"
+								aria-label="icon"
+								oninput={(e) => (language.icon = e.currentTarget.value)}
+							/>
+						</td>
 						<td><input value={language.name} oninput={(e) => (language.name = e.currentTarget.value)} /></td>
 						<td><input value={language.level} oninput={(e) => (language.level = e.currentTarget.value)} /></td>
 						<td><input value={language.state} oninput={(e) => (language.state = e.currentTarget.value)} /></td>
@@ -834,6 +847,14 @@
 		padding-right: 0.5rem;
 	}
 
+	.languages th:nth-child(1) {
+		width: 3.4rem;
+	}
+
+	.languages th:nth-child(2) {
+		width: 9rem;
+	}
+
 	.icon-input {
 		min-width: 0;
 		padding: 0.1rem 0.2rem;
@@ -929,6 +950,13 @@
 			display: none;
 		}
 
+		.languages th:nth-child(4),
+		.languages td:nth-child(4),
+		.languages th:nth-child(5),
+		.languages td:nth-child(5) {
+			display: none;
+		}
+
 		.blocks th:nth-child(1) {
 			width: 2.8rem;
 		}
@@ -937,8 +965,33 @@
 			width: 6.5rem;
 		}
 
+		.blocks th:nth-child(4) {
+			width: 5.5rem;
+		}
+
 		.blocks th:nth-child(6) {
 			width: 4rem;
+		}
+
+		.languages th:nth-child(1) {
+			width: 2.8rem;
+		}
+
+		.languages th:nth-child(2) {
+			width: 7rem;
+		}
+
+		.slot table th:nth-child(1) {
+			width: 6.5rem;
+		}
+
+		.slot table th:nth-child(2),
+		.slot table th:nth-child(3) {
+			width: 5.5rem;
+		}
+
+		.slot table th:nth-child(4) {
+			width: 3.25rem;
 		}
 	}
 </style>

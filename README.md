@@ -136,9 +136,10 @@ database), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
 Two shapes, because the year holds two kinds of thing. The six languages are a
 fixed set with three slots — one primary, one secondary, one tertiary — and what
 changes is which language holds which slot, over dates. Everything else
-(running, music, study) is a season: a kind, a glyph, a name, two dates. The
-glyph is a short string; the page flattens it to a silhouette so it takes the
-theme's ink rather than its own colour.
+(running, music, study) is a season: a kind, a glyph, a name, two dates. Every
+language and every season carries a short glyph. A season's emoji is flattened to
+a silhouette so it takes the theme's ink; a language's glyph is a letter from
+that language (中, Ñ, Ç, È, あ, Ŵ) and keeps its own colour, so a flag would too.
 
 The **database owns the plan**. `/seasons` reads it per request, `/seasons/edit`
 writes it, and `plan.json` follows along. Cloudflare D1 holds four tables:
