@@ -6,7 +6,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  * that has changed since the last one.
  *
  * Languages are a fixed set of six with three slots between them. Everything
- * else is a block: a kind, a name and two dates.
+ * else is a block: a kind, a glyph, a name and two dates.
  */
 
 export const languages = sqliteTable('languages', {
@@ -32,6 +32,7 @@ export const blocks = sqliteTable('blocks', {
 	id: text('id').primaryKey(),
 	kind: text('kind').notNull(),
 	title: text('title').notNull(),
+	icon: text('icon').notNull().default(''),
 	detail: text('detail').notNull().default(''),
 	from: text('from').notNull(),
 	to: text('to').notNull()

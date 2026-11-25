@@ -10,8 +10,17 @@
 		title: string;
 		from: string;
 		to: string;
+		/** The season's glyph, centred on its arc. Empty for a language. */
+		icon?: string;
 	};
-	type Lane = { id: string; label: string; tone: string; bars: Bar[] };
+	type Lane = {
+		id: string;
+		label: string;
+		tone: string;
+		/** Seasons and languages are two groups on the strip; the ring opens a gap. */
+		group?: 'season' | 'language';
+		bars: Bar[];
+	};
 	type Season = { name: string; from: string; to: string };
 
 	let {
@@ -135,10 +144,21 @@
 		winter: 'var(--season-winter)'
 	};
 
-	/** Every lane gets a ring; the rings shrink to fit however many there are. */
-	const gap = $derived(lanes.length > 1 ? Math.min(STEP, (OUTER - INSET) / (lanes.length - 1)) : 0);
+	/**
+	 * Every lane gets a ring; the rings shrink to fit however many there are.
+	 * The language lanes sit in a second group, so a gap wider than the lane
+	 * spacing opens where the seasons end.
+	 */
+	const split = $derived(lanes.findIndex((lane) => lane.group === 'language'));
+	const groupGap = $derived(split > 0 ? STEP : 0);
+	const gap = $derived(
+		lanes.length > 1 ? Math.min(STEP, (OUTER - INSET - groupGap) / (lanes.length - 1)) : 0
+	);
 	const laneWidth = $derived(Math.max(5, Math.min(WIDTH, gap * 0.62)));
-	const radiusOf = (index: number) => OUTER - index * gap;
+	/** The icon sits on a disc wide enough to cut the arc cleanly. */
+	const badge = $derived(Math.max(6, laneWidth * 0.7));
+	const radiusOf = (index: number) =>
+		OUTER - index * gap - (split > 0 && index >= split ? groupGap : 0);
 
 	const tone = (name: string) => seasonTone[name.split(' ')[0]] ?? 'var(--ink)';
 
@@ -367,6 +387,15 @@
 						onmouseleave={hide}
 						role="presentation"
 					/>
+					{#if bar.icon && ((piece.to - piece.from) / total) * 2 * Math.PI * radius > badge * 2.6}
+						{@const [ix, iy] = polar(radius, degrees((piece.from + piece.to) / 2))}
+						<g class="lane-icon" aria-hidden="true">
+							<circle cx={ix} cy={iy} r={badge} />
+							<text x={ix} y={iy} text-anchor="middle" dominant-baseline="central">
+								{bar.icon}
+							</text>
+						</g>
+					{/if}
 				{/each}
 			{/each}
 		</g>
@@ -517,6 +546,23 @@
 
 	.block.live {
 		opacity: 1;
+	}
+
+	/* A season's glyph sits in a disc cut out of its arc, so the bar reads as
+	   the thing carrying the icon rather than as a background for it. */
+	.lane-icon {
+		pointer-events: none;
+	}
+
+	.lane-icon circle {
+		fill: var(--bg, #000);
+	}
+
+	.lane-icon text {
+		fill: var(--ink);
+		font-size: calc(var(--lane-width) * 0.96);
+		font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+		filter: var(--icon-filter, none);
 	}
 
 	.hand {

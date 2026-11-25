@@ -75,7 +75,6 @@
 		secondary: 'var(--lane-2)',
 		tertiary: 'var(--lane-3)'
 	};
-	const SEASON_TONE = ['var(--lane-3)'];
 
 	const valid = (row: { from: string; to: string }) =>
 		Boolean(row.from && row.to && row.from <= row.to);
@@ -83,20 +82,23 @@
 	/**
 	 * The wheel's rails: every season, then the three slots. The slots keep a
 	 * rail even when nobody holds them, so an empty slot looks like a place to
-	 * put a language rather than a missing row.
+	 * put a language rather than a missing row. One tone for all of them, as on
+	 * the public page; the group gap does the separating.
 	 */
 	const ringLanes = $derived.by(() => {
 		const seasons = [...blocks]
 			.filter(valid)
 			.sort((a, b) => (a.from < b.from ? -1 : 1))
-			.map((block, index) => ({
+			.map((block) => ({
 				id: `block-${block.id}`,
+				group: 'season' as const,
 				label: block.title || 'a season',
-				tone: SEASON_TONE[index % SEASON_TONE.length],
+				tone: 'var(--ink)',
 				bars: [
 					{
 						id: block.id,
 						title: block.title || 'a season',
+						icon: block.icon,
 						from: block.from,
 						to: block.to,
 					}
@@ -105,8 +107,9 @@
 
 		const slots = SLOTS.map((slot) => ({
 			id: `slot-${slot}`,
+			group: 'language' as const,
 			label: slot,
-			tone: SLOT_TONE[slot],
+			tone: 'var(--ink)',
 			bars: assignments
 				.filter((item) => item.slot === slot && valid(item))
 				.sort((a, b) => (a.from < b.from ? -1 : 1))
@@ -201,6 +204,7 @@
 				id: `season-${Date.now().toString(36)}`,
 				kind: 'season',
 				title: 'a season',
+				icon: '',
 				detail: '',
 				from,
 				to: addDays(from, 7 * 12 - 1)
@@ -439,9 +443,10 @@
 	</section>
 
 	<section class="panel">
-		<table>
+		<table class="blocks">
 			<thead>
 				<tr>
+					<th>icon</th>
 					<th>title</th>
 					<th>start</th>
 					<th>end</th>
@@ -452,6 +457,15 @@
 			<tbody>
 				{#each blocks as block, index (block.id)}
 					<tr class:chosen={selected.kind === 'block' && selected.index === index}>
+						<td class="icon-cell">
+							<input
+								class="icon-input"
+								value={block.icon}
+								maxlength="4"
+								aria-label="icon"
+								oninput={(e) => (block.icon = e.currentTarget.value)}
+							/>
+						</td>
 						<td><input value={block.title} oninput={(e) => (block.title = e.currentTarget.value)} /></td>
 						<td>
 							<button type="button" class="date" class:active={selected.kind === 'block' && selected.index === index && selected.end === 'from'} onclick={() => choose('block', index, 'from')}>
@@ -802,6 +816,31 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	.blocks th:nth-child(1) {
+		width: 3.4rem;
+	}
+
+	.blocks th:nth-child(3),
+	.blocks th:nth-child(4) {
+		width: 8rem;
+	}
+
+	.blocks th:nth-child(5),
+	.blocks th:nth-child(6) {
+		width: 5rem;
+	}
+
+	.icon-cell {
+		padding-right: 0.5rem;
+	}
+
+	.icon-input {
+		min-width: 0;
+		padding: 0.1rem 0.2rem;
+		text-align: center;
+		font-size: 1rem;
+	}
+
 	.remove {
 		border-color: transparent;
 		color: var(--faint);
@@ -885,9 +924,21 @@
 			font-size: 0.72rem;
 		}
 
-		.panel > table th:nth-child(4),
-		.panel > table td:nth-child(4) {
+		.blocks th:nth-child(5),
+		.blocks td:nth-child(5) {
 			display: none;
+		}
+
+		.blocks th:nth-child(1) {
+			width: 2.8rem;
+		}
+
+		.blocks th:nth-child(3) {
+			width: 6.5rem;
+		}
+
+		.blocks th:nth-child(6) {
+			width: 4rem;
 		}
 	}
 </style>

@@ -127,6 +127,11 @@ body:has(.deck.dark) .ship {
 	--lane-1: #fbf1dd;
 	--lane-2: #c0b196;
 	--lane-3: #8b8170;
+
+	/* Emoji have no theme colour, so they are flattened to a silhouette: white
+	   on the dark sheet, black on the light one. The live bar flips them. */
+	--icon-filter: grayscale(1) brightness(0) invert(1);
+	--icon-filter-live: grayscale(1) brightness(0);
 }
 
 html[data-seasons-theme='light']:has(.deck.dark) {
@@ -169,6 +174,8 @@ html[data-seasons-theme='light'] .deck.dark {
 	--lane-1: #1c1105;
 	--lane-2: #5a4732;
 	--lane-3: #7a664d;
+	--icon-filter: grayscale(1) brightness(0);
+	--icon-filter-live: grayscale(1) brightness(0) invert(1);
 }
 
 /* The green section chips are the site's, not the sheet's: on kraft they get

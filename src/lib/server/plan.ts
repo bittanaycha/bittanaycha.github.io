@@ -38,6 +38,7 @@ export async function readPlan(db: Binding): Promise<Plan> {
 			id: row.id,
 			kind: row.kind as Block['kind'],
 			title: row.title,
+			icon: row.icon,
 			detail: row.detail,
 			from: row.from,
 			to: row.to
@@ -89,6 +90,7 @@ export async function writePlan(db: Binding, plan: Plan) {
 				id: block.id,
 				kind: block.kind,
 				title: block.title,
+				icon: block.icon ?? '',
 				detail: block.detail ?? '',
 				from: block.from,
 				to: block.to

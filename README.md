@@ -136,7 +136,9 @@ database), `Seasons Index.md` (the rules), `Next.md` (the parking lot) and
 Two shapes, because the year holds two kinds of thing. The six languages are a
 fixed set with three slots — one primary, one secondary, one tertiary — and what
 changes is which language holds which slot, over dates. Everything else
-(running, music, study) is a season: a kind, a name, two dates.
+(running, music, study) is a season: a kind, a glyph, a name, two dates. The
+glyph is a short string; the page flattens it to a silhouette so it takes the
+theme's ink rather than its own colour.
 
 The **database owns the plan**. `/seasons` reads it per request, `/seasons/edit`
 writes it, and `plan.json` follows along. Cloudflare D1 holds four tables:
@@ -164,7 +166,9 @@ its leftmost point. The year runs clockwise from 9 o'clock: spring at the top,
 summer at the right, autumn at the bottom. A bar that runs past the window is
 clipped at the rim, not carried round into the wrong year. Everything on the
 wheel — season bands, blocks, kō ticks, today's hand — is placed by that same
-mapping.
+mapping. The strip stacks seasons above languages under dotted rules, and the
+ring opens a wider gap at the same boundary; every bar is the one ink colour, so
+the groups, not the colours, say which is which.
 
 `src/lib/calendar.ts` computes the quarter days from the sun's apparent
 longitude (Meeus, low precision — the instants land within a minute or so of the

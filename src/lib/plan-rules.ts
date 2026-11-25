@@ -10,9 +10,8 @@
  */
 
 /**
- * A block is a name and two dates. `kind` survives on the record so old rows
- * keep their value, but nothing asks for it any more and the ring colours by
- * the order the blocks start in.
+ * A block is a glyph, a name and two dates. `kind` survives on the record so
+ * old rows keep their value, but nothing asks for it any more.
  */
 export const KINDS = ['running', 'music', 'study', 'season'] as const;
 export type Kind = string;
@@ -24,6 +23,7 @@ export type Block = {
 	id: string;
 	kind: Kind;
 	title: string;
+	icon: string;
 	detail: string;
 	from: string;
 	to: string;

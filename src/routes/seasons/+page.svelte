@@ -37,48 +37,50 @@
 		return map;
 	});
 
-	const SLOT_TONE: Record<string, string> = {
-		primary: 'var(--lane-1)',
-		secondary: 'var(--lane-2)',
-		tertiary: 'var(--lane-3)'
-	};
-
-	const SEASON_TONE = ['var(--lane-3)'];
+	/** A bar that misses the window entirely has no width, only overflow. */
+	const inWindow = (from: string, to: string) => from <= last && to >= first;
 
 	/**
 	 * One rail per season and then one per slot, outward to inward. A slot is a
 	 * lane even when it is empty: that is what makes it a slot rather than a
-	 * label on a language.
+	 * label on a language. Every lane shares one tone; the group headings and
+	 * the gap between them do the separating.
 	 */
 	const lanes = $derived.by(() => {
 		const seasons = [...blocks]
 			.sort((a, b) => (a.from < b.from ? -1 : 1))
-			.map((block, index) => ({
+			.map((block) => ({
 				id: `block-${block.id}`,
+				group: 'season' as const,
 				slot: null,
 				label: block.title,
-				tone: SEASON_TONE[index % SEASON_TONE.length],
-				bars: [
-					{
-						id: block.id,
-						title: block.title,
-						from: block.from,
-						to: block.to,
-					}
-				]
+				tone: 'var(--ink)',
+				bars: inWindow(block.from, block.to)
+					? [
+							{
+								id: block.id,
+								title: block.title,
+								icon: block.icon,
+								from: block.from,
+								to: block.to,
+							}
+						]
+					: []
 			}));
 
 		const slots = SLOTS.map((slot) => ({
 			id: `slot-${slot}`,
+			group: 'language' as const,
 			label: slot,
 			slot,
-			tone: SLOT_TONE[slot],
+			tone: 'var(--ink)',
 			bars: assignments
-				.filter((item) => item.slot === slot)
+				.filter((item) => item.slot === slot && inWindow(item.from, item.to))
 				.sort((a, b) => (a.from < b.from ? -1 : 1))
 				.map((item) => ({
 					id: `${item.language}-${item.from}`,
 					title: languages.find((language) => language.id === item.language)?.name ?? item.language,
+					icon: '',
 					from: item.from,
 					to: item.to,
 				}))
@@ -86,6 +88,17 @@
 
 		return [...seasons, ...slots];
 	});
+
+	const groups = $derived(
+		[
+			{ id: 'seasons', label: 'seasons', lanes: lanes.filter((lane) => lane.group === 'season') },
+			{
+				id: 'languages',
+				label: 'languages',
+				lanes: lanes.filter((lane) => lane.group === 'language')
+			}
+		].filter((group) => group.lanes.length > 0)
+	);
 
 	/** Left edge and width of a date range on the strip, as percentages. */
 	function place(from: string, to: string) {
@@ -133,26 +146,35 @@
 	</section>
 
 	<section class="strip">
-		{#each lanes as lane (lane.id)}
-			<div class="lane" class:empty={lane.bars.length === 0} style:--tone={lane.tone}>
-				<p class="lane-name">{lane.label}</p>
-				<div class="rail">
-					{#each lane.bars as bar (bar.id)}
-						<div
-							class="bar"
-							class:bar-language={Boolean(lane.slot)}
-							class:bar-live={bar.from <= today && today <= bar.to}
-							style={place(bar.from, bar.to)}
-							style:--tone={lane.tone}
-						>
-							<span>{bar.title}</span>
-							<span class="bar-weeks">{lane.slot
-									? `${bar.to.slice(8)}/${bar.to.slice(5, 7)}`
-									: weeks(bar.from, bar.to)}</span>
-						</div>
-					{/each}
-				</div>
+		{#each groups as group (group.id)}
+			<div class="group">
+				<p class="group-name">{group.label}</p>
+				<span class="group-rule" aria-hidden="true"></span>
 			</div>
+			{#each group.lanes as lane (lane.id)}
+				<div class="lane" class:empty={lane.bars.length === 0} style:--tone={lane.tone}>
+					<p class="lane-name">{lane.label}</p>
+					<div class="rail">
+						{#each lane.bars as bar (bar.id)}
+							<div
+								class="bar"
+								class:bar-language={Boolean(lane.slot)}
+								class:bar-live={bar.from <= today && today <= bar.to}
+								style={place(bar.from, bar.to)}
+								style:--tone={lane.tone}
+							>
+								<span class="bar-title">
+									{#if bar.icon}<span class="bar-icon" aria-hidden="true">{bar.icon}</span>{/if}
+									<span class="bar-name">{bar.title}</span>
+								</span>
+								<span class="bar-weeks">{lane.slot
+										? `${bar.to.slice(8)}/${bar.to.slice(5, 7)}`
+										: weeks(bar.from, bar.to)}</span>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/each}
 		{/each}
 	</section>
 
@@ -281,8 +303,29 @@
 		gap: 0.5rem;
 	}
 
+	.group {
+		display: grid;
+		grid-template-columns: 9rem 1fr;
+		align-items: center;
+		gap: 1rem;
+		margin-top: 0.9rem;
+	}
 
+	.strip .group:first-child {
+		margin-top: 0;
+	}
 
+	.group-name {
+		margin: 0;
+		color: var(--dim);
+		font-size: 0.62rem;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+	}
+
+	.group-rule {
+		border-top: 1px dotted var(--rule);
+	}
 
 	.lane {
 		display: grid;
@@ -294,7 +337,7 @@
 
 	.lane-name {
 		margin: 0;
-		color: var(--tone, var(--dim));
+		color: var(--dim);
 		font-size: 0.72rem;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -350,7 +393,38 @@
 	}
 
 	.bar-weeks {
+		flex: none;
 		opacity: 0.7;
+	}
+
+	.bar-title {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+
+	.bar-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/*
+	 * Emoji arrive as colour glyphs, so they are flattened to a silhouette and
+	 * then tinted by the theme: light on the dark sheet, dark on the light one.
+	 * Only the live bar inverts, because its ground is the ink itself.
+	 */
+	.bar-icon {
+		flex: none;
+		font-size: 0.95rem;
+		line-height: 1;
+		opacity: 0.85;
+		filter: var(--icon-filter);
+	}
+
+	.bar-live .bar-icon {
+		filter: var(--icon-filter-live);
 	}
 
 	.panel {
@@ -441,6 +515,11 @@
 			flex-basis: 100%;
 		}
 
+		.group {
+			grid-template-columns: 1fr;
+			gap: 0.35rem;
+		}
+
 		.lane {
 			grid-template-columns: 1fr;
 			gap: 0.3rem;
@@ -458,12 +537,6 @@
 		table td:nth-child(5) {
 			display: none;
 		}
-	}
-
-	.bar span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 
 </style>
