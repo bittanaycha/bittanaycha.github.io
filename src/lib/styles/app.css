@@ -78,11 +78,11 @@ body {
 	-webkit-font-smoothing: antialiased;
 }
 
-/* The seasons pages are their own sheet: black paper, no bark, no islands.
+/* The seasons pages are their own sheet: kraft paper, no bark, no islands.
    Everything here hangs off `.deck.dark`, so the rules cannot leak onto a route
    that does not set it. */
 body:has(.deck.dark) {
-	background-color: #000;
+	background-color: #14100b;
 }
 
 body:has(.deck.dark) .sea,
@@ -96,7 +96,129 @@ body:has(.deck.dark) .ship {
 	min-height: 100dvh;
 	max-width: none;
 	padding: 1rem clamp(1rem, 4vw, 3rem) 0;
-	background: #000;
+	/* Dark kraft: a near-black warm ground under a fine dot screen. */
+	background-color: #14100b;
+	background-image:
+		radial-gradient(circle at 1px 1px, rgb(244 226 189 / 0.075) 0.85px, transparent 1.25px),
+		radial-gradient(circle at 2.5px 2.5px, rgb(244 226 189 / 0.035) 0.8px, transparent 1.2px),
+		radial-gradient(120% 85% at 50% -10%, rgb(92 60 30 / 0.32), transparent 68%);
+	background-size:
+		5px 5px,
+		11px 11px,
+		100% 100%;
+
+	/* The ring and the tables both read these, so the palette lives here. */
+	--bg: #14100b;
+	--ink: #f6e8ce;
+	--dim: rgb(246 232 206 / 0.64);
+	--faint: rgb(246 232 206 / 0.4);
+	--rule: rgb(246 232 206 / 0.22);
+	--field: #0d0a06;
+	--wash: rgb(255 246 226 / 0.055);
+	--live-ink: #171008;
+	--spring: #b8f77f;
+	--summer: #ffe066;
+	--autumn: #ffa97e;
+	--winter: #9ccbff;
+	--season-spring: #b2b5a3;
+	--season-summer: #b2987a;
+	--season-autumn: #ad8b8d;
+	--season-winter: #7695d3;
+	--lane-1: #fbf1dd;
+	--lane-2: #c0b196;
+	--lane-3: #8b8170;
+}
+
+html[data-seasons-theme='light']:has(.deck.dark) {
+	color-scheme: light;
+}
+
+html[data-seasons-theme='light'] body:has(.deck.dark) {
+	background-color: #efe3cd;
+}
+
+/* The same sheet in daylight: lighter kraft, darker ink, deeper pastels so the
+   strokes and the table still hold against the paper. */
+html[data-seasons-theme='light'] .deck.dark {
+	background-color: #efe3cd;
+	background-image:
+		radial-gradient(circle at 1px 1px, rgb(72 49 25 / 0.12) 0.85px, transparent 1.2px),
+		radial-gradient(circle at 2.5px 2.5px, rgb(72 49 25 / 0.055) 0.8px, transparent 1.2px),
+		radial-gradient(120% 85% at 50% -10%, rgb(255 250 238 / 0.75), transparent 70%);
+	background-size:
+		5px 5px,
+		11px 11px,
+		100% 100%;
+
+	--bg: #efe3cd;
+	--ink: #2d1e10;
+	--dim: rgb(45 30 16 / 0.66);
+	--faint: rgb(45 30 16 / 0.46);
+	--rule: rgb(45 30 16 / 0.24);
+	--field: #f8efdd;
+	--wash: rgb(45 30 16 / 0.06);
+	--live-ink: #fbf2de;
+	--spring: #5aa531;
+	--summer: #c28a0c;
+	--autumn: #d96334;
+	--winter: #347fc9;
+	--season-spring: #b2b5a3;
+	--season-summer: #b2987a;
+	--season-autumn: #ad8b8d;
+	--season-winter: #7695d3;
+	--lane-1: #1c1105;
+	--lane-2: #5a4732;
+	--lane-3: #7a664d;
+}
+
+/* The green section chips are the site's, not the sheet's: on kraft they get
+   the sheet's ink and a single pastel chip for the page you are on. */
+.deck.dark .site-header {
+	position: absolute;
+	top: 1rem;
+	right: clamp(1rem, 4vw, 3rem);
+	z-index: 20;
+}
+
+.deck.dark .bar {
+	align-items: center;
+	gap: 1rem;
+	padding: 0;
+}
+
+.deck.dark .nav {
+	gap: 1rem;
+}
+
+@media (max-width: 34rem) {
+	.deck.dark .site-header {
+		left: clamp(1rem, 4vw, 3rem);
+	}
+
+	.deck.dark .bar {
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.deck.dark .nav {
+		gap: 0.5rem;
+	}
+
+	.deck.dark .bar a {
+		padding-inline: 0.45rem;
+	}
+}
+
+.deck.dark .bar a {
+	border: 1px solid var(--rule);
+	background: color-mix(in srgb, var(--bg) 68%, transparent);
+	color: var(--ink);
+}
+
+.deck.dark .bar a[aria-current='page'] {
+	border-color: var(--summer);
+	background: var(--summer);
+	color: var(--live-ink);
 }
 
 /* The sea: the leaf photograph, held down to a dark ground, under a field of

@@ -38,12 +38,12 @@
 	});
 
 	const SLOT_TONE: Record<string, string> = {
-		primary: '#9dc0ee',
-		secondary: '#6f97c8',
-		tertiary: '#4c6f9c'
+		primary: 'var(--lane-1)',
+		secondary: 'var(--lane-2)',
+		tertiary: 'var(--lane-3)'
 	};
 
-	const SEASON_TONE = ['#ffffff', '#d98b5f', '#a78bd4', '#c9b458'];
+	const SEASON_TONE = ['var(--lane-3)'];
 
 	/**
 	 * One rail per season and then one per slot, outward to inward. A slot is a
@@ -134,7 +134,7 @@
 
 	<section class="strip">
 		{#each lanes as lane (lane.id)}
-			<div class="lane" class:empty={lane.bars.length === 0}>
+			<div class="lane" class:empty={lane.bars.length === 0} style:--tone={lane.tone}>
 				<p class="lane-name">{lane.label}</p>
 				<div class="rail">
 					{#each lane.bars as bar (bar.id)}
@@ -143,6 +143,7 @@
 							class:bar-language={Boolean(lane.slot)}
 							class:bar-live={bar.from <= today && today <= bar.to}
 							style={place(bar.from, bar.to)}
+							style:--tone={lane.tone}
 						>
 							<span>{bar.title}</span>
 							<span class="bar-weeks">{lane.slot
@@ -206,13 +207,8 @@
 	}
 
 	main {
-		--ink: #fff;
-		--dim: rgb(255 255 255 / 0.62);
-		--faint: rgb(255 255 255 / 0.34);
-		--rule: rgb(255 255 255 / 0.22);
 		font-family: 'Nothing', ui-monospace, monospace;
 		color: var(--ink);
-		background: #000;
 		padding: 2.2rem 0 6rem;
 		width: 100%;
 		max-width: 88rem;
@@ -248,14 +244,14 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: clamp(1rem, 2.5vw, 2.5rem);
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px dotted var(--rule);
 		padding-bottom: 1.6rem;
 		margin-bottom: 1.6rem;
 	}
 
 	.ring-wrap {
 		flex: 1 1 100%;
-		max-width: 60rem;
+		max-width: min(100%, 60rem, calc(100dvh - 5.5rem));
 		margin-inline: auto;
 	}
 
@@ -269,6 +265,14 @@
 		font-size: clamp(1.4rem, 2.4vw, 2rem);
 		letter-spacing: 0.06em;
 		margin: 0.2rem 0 0.1rem;
+		color: var(--summer);
+	}
+
+	.kana {
+		color: var(--dim);
+		margin: 0;
+		font-size: 0.76rem;
+		letter-spacing: 0.04em;
 	}
 
 	.strip {
@@ -290,7 +294,7 @@
 
 	.lane-name {
 		margin: 0;
-		color: var(--dim);
+		color: var(--tone, var(--dim));
 		font-size: 0.72rem;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -303,38 +307,54 @@
 	.rail {
 		position: relative;
 		height: 1.9rem;
-		border-left: 1px solid var(--rule);
-		border-right: 1px solid var(--rule);
+		border-left: 1px dotted var(--rule);
+		border-right: 1px dotted var(--rule);
+		background-image: radial-gradient(circle, var(--faint) 0.55px, transparent 0.8px);
+		background-size: 6px 6px;
+		background-position: 0 0;
 	}
 
 	.bar {
 		position: absolute;
 		top: 0.2rem;
 		bottom: 0.2rem;
-		border: 1px solid var(--rule);
+		border: 1px solid color-mix(in srgb, var(--tone, var(--ink)) 48%, transparent);
+		background-color: color-mix(in srgb, var(--tone, var(--ink)) 14%, transparent);
+		background-image: radial-gradient(
+			circle at 1px 1px,
+			color-mix(in srgb, var(--tone, var(--ink)) 72%, transparent) 0.85px,
+			transparent 1.1px
+		);
+		background-size: 4px 4px;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.5rem;
 		padding: 0 0.45rem;
 		font-size: 0.74rem;
-		color: var(--dim);
+		color: var(--ink);
 		overflow: hidden;
 		white-space: nowrap;
 	}
 
 	.bar-live {
-		background: #fff;
-		color: #000;
-		border-color: #fff;
+		background-color: var(--tone, var(--ink));
+		background-image: radial-gradient(
+			circle at 1px 1px,
+			color-mix(in srgb, var(--bg) 34%, transparent) 1px,
+			transparent 1.2px
+		);
+		background-size: 4px 4px;
+		color: var(--live-ink);
+		border-color: var(--tone, var(--ink));
 	}
 
 	.bar-weeks {
-		opacity: 0.65;
+		opacity: 0.7;
 	}
 
 	.panel {
-		border-top: 1px solid var(--rule);
+		border-top: 1px dotted var(--rule);
 		padding-top: 1rem;
 	}
 
@@ -367,12 +387,22 @@
 
 	td {
 		padding: 0.45rem 0.6rem 0.45rem 0;
-		border-top: 1px solid rgb(255 255 255 / 0.1);
+		border-top: 1px dotted var(--rule);
 		vertical-align: baseline;
 	}
 
 	.cell-name {
 		white-space: nowrap;
+	}
+
+	.cell-name::before {
+		content: '';
+		display: inline-block;
+		width: 5px;
+		height: 5px;
+		margin-right: 0.55rem;
+		background: var(--summer);
+		vertical-align: 0.05em;
 	}
 
 	:global(code) {
@@ -393,12 +423,13 @@
 	a {
 		color: var(--ink);
 		text-decoration: none;
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px dotted var(--rule);
 	}
 
 	a:hover {
-		background: #fff;
-		color: #000;
+		background: var(--summer);
+		color: var(--live-ink);
+		border-color: var(--summer);
 	}
 
 	.stamp {
@@ -406,7 +437,6 @@
 	}
 
 	@media (max-width: 60rem) {
-
 		.ring-wrap {
 			flex-basis: 100%;
 		}
@@ -428,14 +458,6 @@
 		table td:nth-child(5) {
 			display: none;
 		}
-	}
-
-	.bar-language {
-		border-color: rgb(127 166 220 / 0.7);
-	}
-
-	.bar {
-		overflow: hidden;
 	}
 
 	.bar span {

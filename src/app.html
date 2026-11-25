@@ -11,6 +11,16 @@
 			rel="stylesheet"
 		/>
 
+		<script>
+			// The seasons sheet remembers its paper before the first paint, so a
+			// light reader never gets a flash of the dark ground.
+			try {
+				if (localStorage.getItem('seasons-theme') === 'light') {
+					document.documentElement.dataset.seasonsTheme = 'light';
+				}
+			} catch {}
+		</script>
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -91,6 +91,30 @@
 	}
 
 	/**
+	 * The season band is a filled wedge rather than a thick stroke. Angles
+	 * follow the same clamp as `angle`.
+	 */
+	function band(inner: number, outer: number, a1: number, a2: number) {
+		const sweep = Math.max(0, Math.min(360, a2 - a1));
+		const large = sweep > 180 ? 1 : 0;
+		if (sweep >= 359.9) {
+			const [ox, oy] = polar(outer, a1);
+			const [ox2, oy2] = polar(outer, a1 + 180);
+			const [ix, iy] = polar(inner, a1);
+			const [ix2, iy2] = polar(inner, a1 + 180);
+			return [
+				`M ${ox} ${oy} A ${outer} ${outer} 0 1 1 ${ox2} ${oy2} A ${outer} ${outer} 0 1 1 ${ox} ${oy} Z`,
+				`M ${ix} ${iy} A ${inner} ${inner} 0 1 0 ${ix2} ${iy2} A ${inner} ${inner} 0 1 0 ${ix} ${iy} Z`
+			].join(' ');
+		}
+		const [ox, oy] = polar(outer, a1);
+		const [ox2, oy2] = polar(outer, a2);
+		const [ix2, iy2] = polar(inner, a2);
+		const [ix, iy] = polar(inner, a1);
+		return `M ${ox} ${oy} A ${outer} ${outer} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${inner} ${inner} 0 ${large} 0 ${ix} ${iy} Z`;
+	}
+
+	/**
 	 * The spokes a bar covers inside the window. Dates outside are clipped, not
 	 * carried round the seam: the window is one turn of real time, so a bar that
 	 * runs past the end belongs in the next turn, not at the start of this one.
@@ -105,10 +129,10 @@
 	const degrees = (offset: number) => opening + (offset / total) * 360;
 
 	const seasonTone: Record<string, string> = {
-		spring: 'var(--spring)',
-		summer: 'var(--summer)',
-		autumn: 'var(--autumn)',
-		winter: 'var(--winter)'
+		spring: 'var(--season-spring)',
+		summer: 'var(--season-summer)',
+		autumn: 'var(--season-autumn)',
+		winter: 'var(--season-winter)'
 	};
 
 	/** Every lane gets a ring; the rings shrink to fit however many there are. */
@@ -235,8 +259,8 @@
 
 	{#each seasons as season (season.name + season.from)}
 		<path
-			d={arc(BAND + 22, angle(season.from), angle(season.to))}
-			stroke={tone(season.name)}
+			d={band(BAND + 11, BAND + 33, angle(season.from), angle(season.to))}
+			fill={tone(season.name)}
 			class="season"
 			onmouseenter={(event) =>
 				show(event, {
@@ -388,7 +412,7 @@
 	.shell {
 		display: block;
 		width: 100%;
-		max-width: min(100%, calc(100dvh - 7rem));
+		max-width: min(100%, 60rem, calc(100dvh - 5.5rem));
 		margin-inline: auto;
 		padding: 0;
 		border: 0;
@@ -415,9 +439,7 @@
 	}
 
 	.season {
-		fill: none;
-		stroke-width: 22;
-		opacity: 0.55;
+		opacity: 1;
 	}
 
 	.sekki {
@@ -508,13 +530,13 @@
 	}
 
 	.cursor {
-		fill: #000;
+		fill: var(--bg, #000);
 		stroke: var(--ink);
 		stroke-width: 1.5;
 	}
 
 	.hub {
-		fill: #000;
+		fill: color-mix(in srgb, var(--bg, #000) 55%, transparent);
 		stroke: var(--rule);
 	}
 
@@ -526,9 +548,9 @@
 		gap: 0.15rem;
 		max-width: 15rem;
 		padding: 0.45rem 0.6rem;
-		border: 1px solid rgb(255 255 255 / 0.28);
+		border: 1px solid var(--rule, rgb(255 255 255 / 0.28));
 		border-left: 3px solid var(--tip-tone, var(--ink));
-		background: #000;
+		background: var(--bg, #000);
 		color: var(--ink);
 		font-size: 0.68rem;
 		line-height: 1.35;

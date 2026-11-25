@@ -71,11 +71,11 @@
 	});
 
 	const SLOT_TONE: Record<string, string> = {
-		primary: '#9dc0ee',
-		secondary: '#6f97c8',
-		tertiary: '#4c6f9c'
+		primary: 'var(--lane-1)',
+		secondary: 'var(--lane-2)',
+		tertiary: 'var(--lane-3)'
 	};
-	const SEASON_TONE = ['#ffffff', '#d98b5f', '#a78bd4', '#c9b458'];
+	const SEASON_TONE = ['var(--lane-3)'];
 
 	const valid = (row: { from: string; to: string }) =>
 		Boolean(row.from && row.to && row.from <= row.to);
@@ -323,7 +323,6 @@
 		<header class="now">
 			<div>
 				<h1>the plan</h1>
-				<p class="line">The passphrase opens the editor.</p>
 			</div>
 			<div class="actions">
 				<a href="/seasons">back</a>
@@ -487,11 +486,6 @@
 			<div class="slot" class:empty={rows.length === 0} style:--slot-tone={SLOT_TONE[slot]}>
 				<div class="slot-head">
 					<span class="slot-name">{slot}</span>
-					<span class="slot-note">
-						{rows.length === 0
-							? 'nobody holds this slot'
-							: `${rows.length} stretch${rows.length === 1 ? '' : 'es'}`}
-					</span>
 					<button type="button" class="add-slot" onclick={() => addAssignment(slot)}>
 						+ language
 					</button>
@@ -576,10 +570,6 @@
 	}
 
 	main {
-		--ink: #fff;
-		--dim: rgb(255 255 255 / 0.62);
-		--faint: rgb(255 255 255 / 0.34);
-		--rule: rgb(255 255 255 / 0.22);
 		font-family: 'Nothing', ui-monospace, monospace;
 		color: var(--ink);
 		padding: 2.2rem 0 6rem;
@@ -604,7 +594,7 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		gap: 1.5rem;
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px dotted var(--rule);
 		padding-bottom: 1rem;
 	}
 
@@ -624,8 +614,8 @@
 		flex: 1 1 14rem;
 		max-width: 22rem;
 		padding: 0.5rem 0.6rem;
-		border: 1px solid rgb(255 255 255 / 0.3);
-		background: #000;
+		border: 1px solid var(--rule);
+		background: var(--field);
 		color: var(--ink);
 		font: inherit;
 		letter-spacing: 0.08em;
@@ -650,7 +640,7 @@
 		display: grid;
 		grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
 		gap: clamp(1rem, 3vw, 2.5rem);
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px dotted var(--rule);
 		padding: 1.4rem 0;
 	}
 
@@ -690,7 +680,7 @@
 
 	.quick button {
 		padding: 0.35rem 0.6rem;
-		border: 1px solid rgb(255 255 255 / 0.24);
+		border: 1px solid var(--rule);
 		background: none;
 		color: var(--dim);
 		font: inherit;
@@ -712,8 +702,9 @@
 	}
 
 	.systems button.on {
-		background: #fff;
-		color: #000;
+		background: var(--ink);
+		color: var(--bg);
+		border-color: var(--ink);
 	}
 
 	.marks {
@@ -740,7 +731,7 @@
 
 	.mark-detail {
 		grid-column: 2;
-		color: rgb(255 255 255 / 0.45);
+		color: var(--faint);
 		font-size: 0.7rem;
 	}
 
@@ -771,13 +762,13 @@
 	}
 
 	button.date.active {
-		border-color: #fff;
-		background: #fff;
-		color: #000;
+		border-color: var(--ink);
+		background: var(--ink);
+		color: var(--bg);
 	}
 
 	.panel {
-		border-bottom: 1px solid var(--rule);
+		border-bottom: 1px dotted var(--rule);
 		padding: 1.4rem 0;
 	}
 
@@ -793,18 +784,18 @@
 		font-weight: 400;
 		font-size: 0.66rem;
 		letter-spacing: 0.18em;
-		color: rgb(255 255 255 / 0.45);
+		color: var(--faint);
 		padding-bottom: 0.4rem;
 	}
 
 	td {
 		padding: 0.18rem 0.3rem 0.18rem 0;
-		border-top: 1px solid rgb(255 255 255 / 0.12);
+		border-top: 1px dotted var(--rule);
 		vertical-align: middle;
 	}
 
 	tr.chosen td {
-		background: rgb(255 255 255 / 0.05);
+		background: var(--wash);
 	}
 
 	td.num {
@@ -813,7 +804,7 @@
 
 	.remove {
 		border-color: transparent;
-		color: rgb(255 255 255 / 0.5);
+		color: var(--faint);
 	}
 
 	.add {
@@ -842,7 +833,7 @@
 	}
 
 	.slot.empty {
-		border-left-color: rgb(255 255 255 / 0.14);
+		border-left-color: var(--rule);
 	}
 
 	.slot-head {
@@ -868,12 +859,6 @@
 	.slot-name {
 		font-size: 0.95rem;
 		letter-spacing: 0.14em;
-	}
-
-	.slot-note {
-		color: var(--faint);
-		font-size: 0.7rem;
-		letter-spacing: 0.08em;
 	}
 
 	.add-slot {

@@ -3,6 +3,7 @@
 	import { asset, resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Ship from '#lib/components/Ship.svelte';
+	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
 
@@ -43,6 +44,9 @@
 					seasons
 				</a>
 			</nav>
+			{#if dark}
+				<ThemeToggle />
+			{/if}
 		</div>
 	</header>
 
